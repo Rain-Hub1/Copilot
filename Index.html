@@ -92,14 +92,14 @@
             <h1>Login</h1>
             <p>Conecte-se com sua conta do GitHub para acessar seu assistente de IA.</p>
             <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
-            <p style="text-align: center; margin-top: 16px;">Não tem uma conta? <a href="/meu-assistente-ia/Register" onclick="navigateTo(event)">Registre-se</a></p>
+            <p style="text-align: center; margin-top: 16px;">Não tem uma conta? <a href="#/Register">Registre-se</a></p>
         </section>
 
         <section id="register-page" class="page">
             <h1>Registro</h1>
             <p>Para usar este serviço, você precisa de uma conta do GitHub. O registro é rápido e gratuito.</p>
             <a href="https://github.com/signup" target="_blank" class="button primary">Criar conta no GitHub</a>
-            <p style="text-align: center; margin-top: 16px;">Já tem uma conta? <a href="/meu-assistente-ia/Login" onclick="navigateTo(event)">Faça Login</a></p>
+            <p style="text-align: center; margin-top: 16px;">Já tem uma conta? <a href="#/Login">Faça Login</a></p>
         </section>
 
         <section id="chat-page" class="page">
@@ -117,7 +117,7 @@
         <section id="not-found-page" class="page">
             <h1>404 - Página não encontrada</h1>
             <p>A página que você está procurando não existe.</p>
-            <a href="/meu-assistente-ia/" onclick="navigateTo(event)" class="button">Voltar ao início</a>
+            <a href="#" class="button">Voltar ao início</a>
         </section>
     </main>
 
@@ -139,14 +139,7 @@
         const db = firebase.firestore();
         let userToken = null, currentChatId = null, unsubscribeChat = null;
         const githubUser = "Rain-Hub1";
-        const repoDoAction = "meu-assistente-ia";
-        const repoName = `/${repoDoAction}`;
-
-        const navigateTo = (event) => {
-            event.preventDefault();
-            history.pushState(null, null, event.target.href);
-            urlLocationHandler();
-        };
+        const repoDoAction = "Copilot"; // ATUALIZADO PARA O SEU REPOSITÓRIO
 
         const routes = {
             "/Login": { page: "login-page" },
@@ -155,27 +148,17 @@
         };
 
         const urlLocationHandler = async () => {
-            let location = window.location.pathname.replace(repoName, "");
-            if (location.length === 0 || location === "/") location = "/Login";
-
-            const params = new URLSearchParams(window.location.search);
-            const pathFrom404 = params.get('path');
-            if (pathFrom404) {
-                location = pathFrom404.replace(repoName, "");
-                history.replaceState(null, null, repoName + location);
-            }
-
+            let location = window.location.hash.replace("#", "") || "/";
+            
             let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/404";
             let route = routes[routeKey] || { page: "not-found-page" };
 
             if (route.requiresAuth && !auth.currentUser) {
-                history.replaceState(null, null, repoName + "/Login");
-                route = routes["/Login"];
-            } else if (!route.requiresAuth && auth.currentUser && (routeKey === "/Login" || routeKey === "/Register")) {
-                const chatId = location.split('/')[2] || null;
-                const chatPath = chatId ? `/Chat/${chatId}` : '/Chat';
-                history.replaceState(null, null, repoName + chatPath);
-                route = routes["/Chat"];
+                window.location.hash = "/Login";
+                return;
+            } else if (!route.requiresAuth && auth.currentUser && (routeKey === "/Login" || routeKey === "/Register" || routeKey === "/")) {
+                window.location.hash = "/Chat";
+                return;
             }
             
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -191,7 +174,7 @@
             }
         };
 
-        window.onpopstate = urlLocationHandler;
+        window.addEventListener("hashchange", urlLocationHandler);
         window.addEventListener("DOMContentLoaded", () => {
             auth.onAuthStateChanged(user => {
                 urlLocationHandler();
@@ -210,7 +193,7 @@
         function startOrLoadChat(chatId) {
             if (unsubscribeChat) unsubscribeChat();
             currentChatId = chatId;
-            history.replaceState(null, null, `${repoName}/Chat/${currentChatId}`);
+            window.location.hash = `/Chat/${currentChatId}`;
             listenToChat(currentChatId);
         }
 
