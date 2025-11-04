@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>IA com GitHub Actions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>/* Estilos CSS */</style>
+</head>
+<body>
+    <h1>IA com GitHub Actions</h1>
+    <div id="login-view">
+        <p>Você precisa se conectar com o GitHub para usar esta ferramenta.</p>
+        <button onclick="loginComGithub()">Login com GitHub</button>
+    </div>
+
+    <div id="app-view" style="display:none;">
+        <p>Bem-vindo! Preencha os dados para a IA ler o arquivo.</p>
+        <input type="text" id="repoOwner" placeholder="Usuário do GitHub">
+        <input type="text" id="repoName" placeholder="Nome do repositório">
+        <input type="text" id="filePath" placeholder="Caminho do arquivo">
+        <button onclick="dispararAction()">Ler e Resumir</button>
+        <hr>
+        <h2>Resultado:</h2>
+        <p id="summary">Aguardando comando...</p>
+        <pre id="content"></pre>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // COLE A CONFIGURAÇÃO DO FIREBASE AQUI
+        const firebaseConfig = { /* ... */ };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        let userToken = null;
+        let lastTimestamp = null;
+
+        // Verifica se o usuário já está logado
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('app-view').style.display = 'block';
+                // Precisamos do token de acesso para usar a API do GitHub
+                user.getIdTokenResult().then(idTokenResult => {
+                    // Este não é o token que precisamos, precisamos do token do provedor
+                    // A forma mais fácil é pegar na hora do login.
+                });
+            }
+        });
+
+        function loginComGithub() {
+            const provider = new firebase.auth.GithubAuthProvider();
+            auth.signInWithPopup(provider).then(result => {
+                userToken = result.credential.accessToken; // TOKEN PARA USAR A API!
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('app-view').style.display = 'block';
+            }).catch(error => console.error("Erro de login:", error));
+        }
+
+        async function dispararAction() {
+            if (!userToken) {
+                alert("Faça o login primeiro!");
+                return;
+            }
+            document.getElementById('summary').innerText = 'Disparando a IA no GitHub Actions... Isso pode levar um minuto.';
+            document.getElementById('content').innerText = '';
+
+            const owner = 'SEU_USUARIO_GITHUB'; // <-- MUDE AQUI
+            const repo = 'ia-com-actions'; // <-- MUDE AQUI SE O NOME FOR DIFERENTE
+
+            await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/processar.yml/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${userToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    ref: 'main',
+                    inputs: {
+                        repoOwner: document.getElementById('repoOwner').value,
+                        repoName: document.getElementById('repoName').value,
+                        filePath: document.getElementById('filePath').value
+                    }
+                })
+            });
+                    
+            // Começa a verificar o arquivo de resposta
+            verificarResposta();
+        }
+
+        async function verificarResposta() {
+            console.log("Verificando resposta...");
+            const owner = 'Rain-Hub1'; // <-- MUDE AQUI
+            const repo = 'Copilot'; // <-- MUDE AQUI
+
+            // Usamos uma URL com um timestamp para evitar o cache do navegador
+            const url = `https://raw.githubusercontent.com/${owner}/${repo}/main/resposta.json?t=${Date.now()}`;
+                    
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.timestamp && data.timestamp !== lastTimestamp) {
+                lastTimestamp = data.timestamp;
+                if (data.status === 'concluido') {
+                    document.getElementById('summary').innerText = data.summary;
+                    document.getElementById('content').innerText = data.originalContent;
+                } else if (data.status === 'erro') {
+                    document.getElementById('summary').innerText = `Erro: ${data.message}`;
+                }
+            } else {
+                // Se a resposta ainda não mudou, verifica de novo em 5 segundos
+                setTimeout(verificarResposta, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
