@@ -1,234 +1,33 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-color-mode="auto" data-light-theme="light" data-dark-theme="dark">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IA Assistente GitHub</title>
+    <script>
+        (function() {
+            const K = 'github-ai-theme';
+            const q = window.matchMedia('(prefers-color-scheme: dark)');
+            let theme = localStorage.getItem(K);
+            if (theme === 'auto' || !theme) {
+                theme = q.matches ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-color-mode', theme);
+        })();
+    </script>
     <style>
-        :root {
+        :root, [data-color-mode=light] {
             --color-bg-default: #ffffff; --color-bg-subtle: #f6f8fa; --color-fg-default: #24292f;
             --color-fg-muted: #57606a; --color-border-default: #d0d7de; --color-btn-primary-bg: #2da44e;
             --color-btn-primary-hover-bg: #2c974b; --color-btn-primary-fg: #ffffff; --color-link-fg: #0969da;
+            --color-danger-fg: #cf222e;
         }
-        [data-color-mode="dark"] {
+        [data-color-mode=dark] {
             --color-bg-default: #0d1117; --color-bg-subtle: #161b22; --color-fg-default: #c9d1d9;
             --color-fg-muted: #8b949e; --color-border-default: #30363d; --color-btn-primary-bg: #238636;
             --color-btn-primary-hover-bg: #2ea043; --color-link-fg: #58a6ff;
+            --color-danger-fg: #f85149;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
-        main { max-width: 800px; margin: auto; display: flex; gap: 16px; }
-        #app-nav { display: none; flex-direction: column; gap: 8px; width: 180px; }
-        #app-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--color-fg-default); font-weight: 600; }
-        #app-nav a:hover { background-color: var(--color-bg-subtle); }
-        #app-nav a.active { background-color: var(--color-bg-subtle); font-weight: bold; }
-        #content-container { flex-grow: 1; }
-        .page { display: none; background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; padding: 24px; }
-        .page.active { display: block; }
-        h1 { font-size: 1.5rem; margin-top: 0; margin-bottom: 16px; }
-        p { color: var(--color-fg-muted); margin-top: 0; margin-bottom: 16px; }
-        a { color: var(--color-link-fg); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        button, .button { cursor: pointer; padding: 10px 16px; border-radius: 6px; border: 1px solid var(--color-border-default); font-weight: 600; background-color: var(--color-bg-subtle); color: var(--color-fg-default); width: 100%; margin-top: 10px; text-align: center; display: inline-block; box-sizing: border-box; }
-        button.primary, .button.primary { background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); border-color: rgba(27, 31, 36, 0.15); }
-        button.danger { background-color: #f85149; color: white; border-color: rgba(27, 31, 36, 0.15); }
-        #chat-messages { height: 400px; overflow-y: auto; border: 1px solid var(--color-border-default); padding: 10px; border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; }
-        .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
-        .message.user { background-color: var(--color-btn-primary-bg); color: white; margin-left: auto; align-self: flex-end; }
-        .message.assistant { background-color: var(--color-bg-subtle); border: 1px solid var(--color-border-default); align-self: flex-start; }
-        #chat-input { display: flex; }
-        #chat-input input { flex-grow: 1; margin: 0; border-radius: 6px 0 0 6px; background-color: var(--color-bg-default); color: var(--color-fg-default); border: 1px solid var(--color-border-default); padding: 8px 12px; }
-        #chat-input button { width: auto; margin: 0; border-radius: 0 6px 6px 0; }
-    </style>
-</head>
-<body>
-    <main>
-        <nav id="app-nav">
-            <a href="#/Home">Início</a>
-            <a href="#/New-Chat">Novo Chat</a>
-            <a href="#/Settings">Configurações</a>
-        </nav>
-        <div id="content-container">
-            <section id="home-page" class="page">
-                <h1>Bem-vindo ao seu Assistente de IA</h1>
-                <p>Use o menu ao lado para iniciar uma nova conversa ou gerenciar suas configurações.</p>
-                <a href="#/New-Chat" class="button primary">Iniciar um Novo Chat</a>
-            </section>
-
-            <section id="login-page" class="page">
-                <h1>Login</h1>
-                <p>Conecte-se com sua conta do GitHub para acessar seu assistente de IA.</p>
-                <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
-                <p style="text-align: center; margin-top: 16px;">Não tem uma conta? <a href="#/Register">Registre-se</a></p>
-            </section>
-
-            <section id="register-page" class="page">
-                <h1>Registro</h1>
-                <p>Para usar este serviço, você precisa de uma conta do GitHub. O registro é rápido e gratuito.</p>
-                <a href="https://github.com/signup" target="_blank" class="button primary">Criar conta no GitHub</a>
-                <p style="text-align: center; margin-top: 16px;">Já tem uma conta? <a href="#/Login">Faça Login</a></p>
-            </section>
-
-            <section id="settings-page" class="page">
-                <h1>Configurações</h1>
-                <p>Gerencie as configurações da sua conta aqui.</p>
-                <button class="danger" onclick="logout()">Sair (Logout)</button>
-            </section>
-
-            <section id="chat-page" class="page">
-                <div id="chat-messages"></div>
-                <div id="chat-input">
-                    <input type="text" id="message-input" placeholder="leia o arquivo X do repo Y..." onkeydown="if(event.key==='Enter') sendMessage()">
-                    <button class="primary" onclick="sendMessage()">Enviar</button>
-                </div>
-            </section>
-            
-            <section id="not-found-page" class="page">
-                <h1>404 - Página não encontrada</h1>
-                <p>A página que você está procurando não existe.</p>
-                <a href="#" class="button">Voltar ao início</a>
-            </section>
-        </div>
-    </main>
-
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyC0JUKA-uIHMpxLRtv7BwraOph3QOamxhA",
-          authDomain: "github-ai-a4fcb.firebaseapp.com",
-          projectId: "github-ai-a4fcb",
-          storageBucket: "github-ai-a4fcb.firebasestorage.app",
-          messagingSenderId: "99989504065",
-          appId: "1:99989504065:web:fa916d2c5f69d44f9006c0"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        let userToken = null, currentChatId = null, unsubscribeChat = null;
-        const githubUser = "Rain-Hub1";
-        const repoDoAction = "Copilot";
-
-        const routes = {
-            "/Home": { page: "home-page", requiresAuth: true },
-            "/Login": { page: "login-page" },
-            "/Register": { page: "register-page" },
-            "/Settings": { page: "settings-page", requiresAuth: true },
-            "/New-Chat": { page: "chat-page", requiresAuth: true, action: startNewChat },
-            "/Chat": { page: "chat-page", requiresAuth: true }
-        };
-
-        const urlLocationHandler = async () => {
-            let location = window.location.hash.replace("#", "") || "/";
-            
-            let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/404";
-            let route = routes[routeKey] || { page: "not-found-page" };
-
-            const user = auth.currentUser;
-            document.getElementById('app-nav').style.display = user ? 'flex' : 'none';
-
-            if (route.requiresAuth && !user) {
-                window.location.hash = "/Login";
-                return;
-            } else if (!route.requiresAuth && user && (routeKey === "/Login" || routeKey === "/Register" || routeKey === "/")) {
-                window.location.hash = "/Home";
-                return;
-            }
-            
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(route.page).classList.add('active');
-            
-            document.querySelectorAll('#app-nav a').forEach(a => a.classList.remove('active'));
-            const activeLink = document.querySelector(`#app-nav a[href="#${routeKey}"]`);
-            if (activeLink) activeLink.classList.add('active');
-
-            if (route.action) {
-                route.action();
-            } else if (route.page === 'chat-page') {
-                const chatIdFromUrl = location.split('/')[2];
-                if (chatIdFromUrl && chatIdFromUrl !== currentChatId) {
-                    startOrLoadChat(chatIdFromUrl);
-                } else if (!chatIdFromUrl) {
-                    window.location.hash = "/New-Chat";
-                }
-            }
-        };
-
-        window.addEventListener("hashchange", urlLocationHandler);
-        window.addEventListener("DOMContentLoaded", () => {
-            auth.onAuthStateChanged(user => {
-                if (user) userToken = user.accessToken;
-                urlLocationHandler();
-            });
-        });
-
-        function loginComGithub() {
-            const provider = new firebase.auth.GithubAuthProvider();
-            provider.addScope('repo');
-            auth.signInWithPopup(provider).catch(error => console.error("Erro de login:", error));
-        }
-
-        function logout() {
-            auth.signOut();
-        }
-
-        function startOrLoadChat(chatId) {
-            if (unsubscribeChat) unsubscribeChat();
-            currentChatId = chatId;
-            window.location.hash = `/Chat/${currentChatId}`;
-            listenToChat(currentChatId);
-        }
-
-        function startNewChat() {
-            const newChatId = `chat_${auth.currentUser.uid}_${Date.now()}`;
-            const messagesCol = db.collection('chats').doc(newChatId).collection('messages');
-            messagesCol.add({
-                role: 'assistant',
-                content: 'Olá! Sou seu assistente de IA. Peça-me para ler um arquivo.',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                startOrLoadChat(newChatId);
-            });
-        }
-
-        function listenToChat(chatId) {
-            const messagesCol = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp');
-            unsubscribeChat = messagesCol.onSnapshot(snapshot => {
-                const chatBox = document.getElementById('chat-messages');
-                chatBox.innerHTML = '';
-                snapshot.forEach(doc => displayMessage(doc.data()));
-                chatBox.scrollTop = chatBox.scrollHeight;
-            });
-        }
-
-        function displayMessage(message) {
-            const chatBox = document.getElementById('chat-messages');
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message', message.role);
-            msgDiv.textContent = message.content;
-            chatBox.appendChild(msgDiv);
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
-            if (!content || !currentChatId || !userToken) return;
-            input.value = '';
-            
-            const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
-            await messagesCol.add({
-                role: 'user',
-                content: content,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await fetch(`https://api.github.com/repos/${githubUser}/${repoDoAction}/actions/workflows/processar.yml/dispatches`, {
-                method: 'POST',
-                headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' },
-                body: JSON.stringify({ ref: 'main', inputs: { chatId: currentChatId } })
-            });
-        }
-    </script>
-</body>
-</html>
+        main { max-width: 1012px; margin: auto; display: flex; gap: 24px; }
+        #app-nav { display: none; flex-direction: column; gap: 4px; width: 220px; fl<Generate></Generate>
