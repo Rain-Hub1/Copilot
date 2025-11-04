@@ -5,19 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IA Assistente GitHub</title>
     <style>
-        :root { --color-bg-default: #ffffff; --color-bg-subtle: #f6f8fa; --color-fg-default: #24292f; --color-fg-muted: #57606a; --color-border-default: #d0d7de; --color-btn-primary-bg: #2da44e; --color-btn-primary-hover-bg: #2c974b; --color-btn-primary-fg: #ffffff; }
-        [data-color-mode="dark"] { --color-bg-default: #0d1117; --color-bg-subtle: #161b22; --color-fg-default: #c9d1d9; --color-fg-muted: #8b949e; --color-border-default: #30363d; --color-btn-primary-bg: #238636; --color-btn-primary-hover-bg: #2ea043; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
+        :root {
+            --color-bg-default: #ffffff;
+            --color-bg-subtle: #f6f8fa;
+            --color-fg-default: #24292f;
+            --color-fg-muted: #57606a;
+            --color-border-default: #d0d7de;
+            --color-btn-primary-bg: #2da44e;
+            --color-btn-primary-hover-bg: #2c974b;
+            --color-btn-primary-fg: #ffffff;
+            --color-link-fg: #0969da;
+        }
+        [data-color-mode="dark"] {
+            --color-bg-default: #0d1117;
+            --color-bg-subtle: #161b22;
+            --color-fg-default: #c9d1d9;
+            --color-fg-muted: #8b949e;
+            --color-border-default: #30363d;
+            --color-btn-primary-bg: #238636;
+            --color-btn-primary-hover-bg: #2ea043;
+            --color-link-fg: #58a6ff;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 1rem; 
+            background-color: var(--color-bg-subtle); 
+            color: var(--color-fg-default); 
+            line-height: 1.5; 
+        }
         main { max-width: 800px; margin: auto; }
-        .page { display: none; background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; padding: 16px; }
+        .page { 
+            display: none; 
+            background-color: var(--color-bg-default); 
+            border: 1px solid var(--color-border-default); 
+            border-radius: 6px; 
+            padding: 24px; 
+        }
         .page.active { display: block; }
-        button.primary { cursor: pointer; padding: 10px 15px; border-radius: 6px; border: 1px solid rgba(27, 31, 36, 0.15); font-weight: 600; background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); width: 100%; margin-top: 10px; }
+        h1 { font-size: 1.5rem; margin-top: 0; margin-bottom: 16px; }
+        p { color: var(--color-fg-muted); margin-top: 0; margin-bottom: 16px; }
+        a { color: var(--color-link-fg); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        button, .button { 
+            cursor: pointer; 
+            padding: 10px 16px; 
+            border-radius: 6px; 
+            border: 1px solid var(--color-border-default); 
+            font-weight: 600; 
+            background-color: var(--color-bg-subtle);
+            color: var(--color-fg-default);
+            width: 100%; 
+            margin-top: 10px; 
+            text-align: center;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+        button.primary, .button.primary {
+            background-color: var(--color-btn-primary-bg); 
+            color: var(--color-btn-primary-fg);
+            border-color: rgba(27, 31, 36, 0.15);
+        }
+        button.primary:hover, .button.primary:hover {
+            background-color: var(--color-btn-primary-hover-bg);
+        }
         #chat-messages { height: 400px; overflow-y: auto; border: 1px solid var(--color-border-default); padding: 10px; border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; }
         .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
         .message.user { background-color: var(--color-btn-primary-bg); color: white; margin-left: auto; align-self: flex-end; }
         .message.assistant { background-color: var(--color-bg-subtle); border: 1px solid var(--color-border-default); align-self: flex-start; }
         #chat-input { display: flex; }
-        #chat-input input { flex-grow: 1; margin: 0; border-radius: 6px 0 0 6px; }
+        #chat-input input { 
+            flex-grow: 1; 
+            margin: 0; 
+            border-radius: 6px 0 0 6px; 
+            background-color: var(--color-bg-default);
+            color: var(--color-fg-default);
+            border: 1px solid var(--color-border-default);
+            padding: 8px 12px;
+        }
         #chat-input button { width: auto; margin: 0; border-radius: 0 6px 6px 0; }
     </style>
 </head>
@@ -25,22 +90,22 @@
     <main>
         <section id="login-page" class="page">
             <h1>Login</h1>
-            <p>Conecte-se com sua conta do GitHub para começar.</p>
+            <p>Conecte-se com sua conta do GitHub para acessar seu assistente de IA.</p>
             <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
-            <p>Não tem uma conta? <a href="/meu-assistente-ia/Register" onclick="navigateTo(event)">Registre-se</a></p>
+            <p style="text-align: center; margin-top: 16px;">Não tem uma conta? <a href="/meu-assistente-ia/Register" onclick="navigateTo(event)">Registre-se</a></p>
         </section>
 
         <section id="register-page" class="page">
             <h1>Registro</h1>
-            <p>Para usar este serviço, você precisa de uma conta do GitHub.</p>
-            <a href="https://github.com/signup" target="_blank"><button class="primary">Criar conta no GitHub</button></a>
-            <p>Já tem uma conta? <a href="/meu-assistente-ia/Login" onclick="navigateTo(event)">Faça Login</a></p>
+            <p>Para usar este serviço, você precisa de uma conta do GitHub. O registro é rápido e gratuito.</p>
+            <a href="https://github.com/signup" target="_blank" class="button primary">Criar conta no GitHub</a>
+            <p style="text-align: center; margin-top: 16px;">Já tem uma conta? <a href="/meu-assistente-ia/Login" onclick="navigateTo(event)">Faça Login</a></p>
         </section>
 
         <section id="chat-page" class="page">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>Chat com IA</h1>
-                <button onclick="startNewChat()">Novo Chat</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h1 style="margin: 0;">Chat com IA</h1>
+                <button style="width: auto; margin: 0;" onclick="startNewChat()">Novo Chat</button>
             </div>
             <div id="chat-messages"></div>
             <div id="chat-input">
@@ -51,7 +116,8 @@
         
         <section id="not-found-page" class="page">
             <h1>404 - Página não encontrada</h1>
-            <p>A página que você está procurando não existe. <a href="/meu-assistente-ia/" onclick="navigateTo(event)">Voltar ao início</a>.</p>
+            <p>A página que você está procurando não existe.</p>
+            <a href="/meu-assistente-ia/" onclick="navigateTo(event)" class="button">Voltar ao início</a>
         </section>
     </main>
 
@@ -76,7 +142,6 @@
         const repoDoAction = "meu-assistente-ia";
         const repoName = `/${repoDoAction}`;
 
-        // --- ROTEADOR ---
         const navigateTo = (event) => {
             event.preventDefault();
             history.pushState(null, null, event.target.href);
@@ -91,7 +156,7 @@
 
         const urlLocationHandler = async () => {
             let location = window.location.pathname.replace(repoName, "");
-            if (location.length === 0) location = "/";
+            if (location.length === 0 || location === "/") location = "/Login";
 
             const params = new URLSearchParams(window.location.search);
             const pathFrom404 = params.get('path');
@@ -100,13 +165,13 @@
                 history.replaceState(null, null, repoName + location);
             }
 
-            let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/";
+            let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/404";
             let route = routes[routeKey] || { page: "not-found-page" };
 
             if (route.requiresAuth && !auth.currentUser) {
                 history.replaceState(null, null, repoName + "/Login");
                 route = routes["/Login"];
-            } else if (!route.requiresAuth && auth.currentUser && (routeKey === "/Login" || routeKey === "/Register" || routeKey === "/")) {
+            } else if (!route.requiresAuth && auth.currentUser && (routeKey === "/Login" || routeKey === "/Register")) {
                 const chatId = location.split('/')[2] || null;
                 const chatPath = chatId ? `/Chat/${chatId}` : '/Chat';
                 history.replaceState(null, null, repoName + chatPath);
@@ -120,7 +185,7 @@
                 const chatIdFromUrl = location.split('/')[2];
                 if (chatIdFromUrl && chatIdFromUrl !== currentChatId) {
                     startOrLoadChat(chatIdFromUrl);
-                } else if (!currentChatId) {
+                } else if (!currentChatId && auth.currentUser) {
                     startNewChat();
                 }
             }
@@ -133,7 +198,6 @@
             });
         });
 
-        // --- LÓGICA DO APP ---
         function loginComGithub() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
