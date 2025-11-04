@@ -5,24 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IA Assistente GitHub</title>
     <style>
-        :root { --color-bg-default: #ffffff; --color-bg-subtle: #f6f8fa; --color-fg-default: #24292f; --color-border-default: #d0d7de; --color-btn-primary-bg: #2da44e; --color-btn-primary-hover-bg: #2c974b; --color-btn-primary-fg: #ffffff; }
-        [data-color-mode="dark"] { --color-bg-default: #0d1117; --color-bg-subtle: #161b22; --color-fg-default: #c9d1d9; --color-border-default: #30363d; --color-btn-primary-bg: #238636; --color-btn-primary-hover-bg: #2ea043; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
+        /* Define as variáveis de cor para o tema claro (padrão) */
+        :root {
+            --color-bg-default: #ffffff;
+            --color-bg-subtle: #f6f8fa;
+            --color-fg-default: #24292f;
+            --color-fg-muted: #57606a;
+            --color-border-default: #d0d7de;
+            --color-btn-primary-bg: #2da44e;
+            --color-btn-primary-hover-bg: #2c974b;
+            --color-btn-primary-fg: #ffffff;
+            --color-attention-subtle: #fff8c5;
+        }
+        /* Define as variáveis de cor para o tema escuro */
+        [data-color-mode="dark"] {
+            --color-bg-default: #0d1117;
+            --color-bg-subtle: #161b22;
+            --color-fg-default: #c9d1d9;
+            --color-fg-muted: #8b949e;
+            --color-border-default: #30363d;
+            --color-btn-primary-bg: #238636;
+            --color-btn-primary-hover-bg: #2ea043;
+            --color-attention-subtle: rgba(187, 128, 9, 0.15);
+        }
+        /* Aplica as cores e o layout base */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 1rem; 
+            background-color: var(--color-bg-subtle); 
+            color: var(--color-fg-default); 
+            line-height: 1.5; 
+        }
         main { max-width: 800px; margin: auto; }
         #container { background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; }
         header { padding: 16px; border-bottom: 1px solid var(--color-border-default); }
         h1 { font-size: 1.5rem; margin: 0; }
+        h2 { border-bottom: 1px solid var(--color-border-default); padding-bottom: 8px; }
+        p { color: var(--color-fg-muted); }
         .tab-nav { display: flex; border-bottom: 1px solid var(--color-border-default); }
         .tab-nav button { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 16px; color: var(--color-fg-default); font-weight: 600; cursor: pointer; margin-bottom: -1px; }
         .tab-nav button.active { border-bottom-color: var(--color-btn-primary-bg); }
         .tab-content { padding: 16px; }
         #chats-tab { display: none; }
-        button.primary { cursor: pointer; padding: 10px 15px; border-radius: 6px; border: 1px solid var(--color-border-default); font-weight: 600; background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); width: 100%; margin-top: 10px; }
+        button.primary { cursor: pointer; padding: 10px 15px; border-radius: 6px; border: 1px solid rgba(27, 31, 36, 0.15); font-weight: 600; background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); width: 100%; margin-top: 10px; }
         button.primary:hover { background-color: var(--color-btn-primary-hover-bg); }
         select, input { width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--color-border-default); background-color: var(--color-bg-default); color: var(--color-fg-default); box-sizing: border-box; }
-        label { font-weight: 600; display: block; margin-bottom: 8px; }
+        label { font-weight: 600; display: block; margin-bottom: 8px; color: var(--color-fg-default); }
         hr { border: none; border-top: 1px solid var(--color-border-default); margin: 16px 0; }
         pre { background-color: var(--color-bg-subtle); padding: 16px; white-space: pre-wrap; word-wrap: break-word; border-radius: 6px; border: 1px solid var(--color-border-default); font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 0.875rem; }
+        #summary { color: var(--color-fg-default); background-color: var(--color-attention-subtle); padding: 8px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -60,6 +92,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script>
+        // O JavaScript continua exatamente o mesmo da resposta anterior.
+        // Cole aqui o bloco <script> completo, incluindo a firebaseConfig.
         const firebaseConfig = {
           apiKey: "AIzaSyC0JUKA-uIHMpxLRtv7BwraOph3QOamxhA",
           authDomain: "github-ai-a4fcb.firebaseapp.com",
@@ -130,7 +164,7 @@
             const repoName = document.getElementById('repo-select').value;
             const filePath = document.getElementById('file-select').value;
             if (!repoName || !filePath) { alert("Por favor, selecione um repositório e um arquivo."); return; }
-                
+            
             document.getElementById('summary').innerText = 'Disparando a IA no GitHub Actions... O resultado pode levar até 2 minutos.';
             document.getElementById('content').innerText = '';
             if (intervalId) clearInterval(intervalId);
@@ -140,7 +174,7 @@
                 headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' },
                 body: JSON.stringify({ ref: 'main', inputs: { repoName, filePath } })
             });
-                
+            
             setTimeout(() => {
                 lastTimestamp = null;
                 verificarResposta();
