@@ -27,7 +27,8 @@
             --color-danger-fg: #f85149;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
-        main { max-width: 1012px; margin: auto; display: flex; gap: 24px; }
+        main { max-width: 1012px; margin: auto; }
+        .layout { display: flex; gap: 24px; }
         #app-nav { display: none; flex-direction: column; gap: 4px; width: 220px; flex-shrink: 0; }
         #app-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--color-fg-default); font-weight: 500; }
         #app-nav a:hover { background-color: var(--color-bg-subtle); }
@@ -35,7 +36,7 @@
         #content-container { flex-grow: 1; min-width: 0; }
         .page { display: none; background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; }
         .page.active { display: block; }
-        .page-header { padding: 16px 24px; border-bottom: 1px solid var(--color-border-default); }
+        .page-header { padding: 16px 24px; border-bottom: 1px solid var(--color-border-default); display: flex; align-items: center; gap: 8px; }
         .page-content { padding: 24px; }
         h1 { font-size: 1.25rem; margin: 0; }
         p { color: var(--color-fg-muted); margin-top: 0; margin-bottom: 16px; }
@@ -55,10 +56,15 @@
         #chat-input input { flex-grow: 1; margin: 0; border-radius: 6px 0 0 6px; background-color: var(--color-bg-default); color: var(--color-fg-default); border: 1px solid var(--color-border-default); padding: 8px 12px; }
         #chat-input button { width: auto; margin: 0; border-radius: 0 6px 6px 0; }
         #error-message { color: var(--color-danger-fg); margin-bottom: 16px; text-align: center; }
+        #mobile-menu-button { display: none; background: none; border: none; cursor: pointer; padding: 8px; }
+        body.is-mobile #main-layout { flex-direction: column; }
+        body.is-mobile #app-nav { width: 100%; position: fixed; top: 0; left: -100%; background-color: var(--color-bg-default); height: 100%; z-index: 100; transition: left 0.3s ease; padding-top: 60px; }
+        body.is-mobile #app-nav.open { left: 0; }
+        body.is-mobile #mobile-menu-button { display: block; }
     </style>
 </head>
 <body>
-    <main>
+    <main id="main-layout">
         <nav id="app-nav">
             <a href="#/Home">Início</a>
             <a href="#/New-Chat">Novo Chat</a>
@@ -114,10 +120,14 @@
             </section>
 
             <section id="chat-page" class="page">
+                <div class="page-header">
+                    <button id="mobile-menu-button" onclick="toggleMobileMenu()">☰</button>
+                    <h1>Chat</h1>
+                </div>
                 <div class="page-content">
                     <div id="chat-messages"></div>
                     <div id="chat-input">
-                        <input type="text" id="message-input" placeholder="leia o arquivo X do repo Y..." onkeydown="if(event.key==='Enter') sendMessage()">
+                        <input type="text" id="message-input" placeholder="crie, leia ou edite um arquivo..." onkeydown="if(event.key==='Enter') sendMessage()">
                         <button class="primary" onclick="sendMessage()">Enviar</button>
                     </div>
                 </div>
@@ -162,6 +172,16 @@
             "/Chat": { page: "chat-page", requiresAuth: true }
         };
 
+        function detectDevice() {
+            const isMobile = window.innerWidth <= 768;
+            document.body.classList.toggle('is-mobile', isMobile);
+            document.getElementById('main-layout').classList.toggle('layout', !isMobile);
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('app-nav').classList.toggle('open');
+        }
+
         const urlLocationHandler = async () => {
             let location = window.location.hash.replace("#", "") || "/";
             let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/404";
@@ -203,24 +223,25 @@
         };
 
         window.addEventListener("hashchange", urlLocationHandler);
+        window.addEventListener("resize", detectDevice);
         
         auth.onAuthStateChanged(user => {
+            userToken = null;
             if (user) {
                 const githubProvider = user.providerData.find(p => p.providerId === 'github.com');
                 if (githubProvider) {
-                    user.getIdTokenResult().then(idTokenResult => {
-                        userToken = idTokenResult.claims.githubAccessToken;
+                    user.getIdToken(true).then(idToken => {
+                        const decodedToken = JSON.parse(atob(idToken.split('.')[1]));
+                        userToken = decodedToken.firebase.identities['github.com'][0];
                         urlLocationHandler();
                     });
-                } else {
-                    userToken = null;
-                    urlLocationHandler();
+                    return;
                 }
-            } else {
-                userToken = null;
-                urlLocationHandler();
             }
+            urlLocationHandler();
         });
+        
+        detectDevice();
 
         function displayError(elementId, error) {
             const defaultMessages = {
@@ -254,11 +275,7 @@
         function linkGithubAccount() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
-            auth.currentUser.linkWithPopup(provider).then(result => {
-                const credential = result.credential;
-                userToken = credential.accessToken;
-                urlLocationHandler();
-            }).catch(error => alert('Erro ao conectar conta do GitHub: ' + error.message));
+            auth.currentUser.linkWithPopup(provider).catch(error => alert('Erro ao conectar conta do GitHub: ' + error.message));
         }
 
         function logout() {
@@ -277,7 +294,7 @@
             const messagesCol = db.collection('chats').doc(newChatId).collection('messages');
             messagesCol.add({
                 role: 'assistant',
-                content: 'Olá! Sou seu assistente de IA. Peça-me para ler um arquivo.',
+                content: 'Olá! Sou seu assistente de IA. Peça-me para criar, ler ou editar um arquivo.',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 startOrLoadChat(newChatId);
