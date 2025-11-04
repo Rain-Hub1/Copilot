@@ -1,4 +1,4 @@
-name: Processar Mensagem de Chat com IA (Acionado pelo Site)
+name: Processar Mensagem de Chat com IA
 
 on:
   workflow_dispatch:
@@ -34,8 +34,8 @@ jobs:
               appId: "1:99989504065:web:fa916d2c5f69d44f9006c0"
             };
                 
-            const geminiApiKey = "AIzaSyB7ou_FpcqAcb21dv5BKoXZl_ve2NHhA3I";
-            const githubToken = "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";
+            const geminiApiKey = "${{ secrets.GEMINI_API_KEY }}";
+            const githubToken = "${{ secrets.GITHUB_TOKEN }}";
 
             const genAI = new GoogleGenerativeAI(geminiApiKey);
             const octokit = new Octokit({ auth: githubToken });
@@ -80,7 +80,7 @@ jobs:
                 const history = messages.map(msg => ({ role: msg.role, parts: [{ text: msg.content }] }));
                 history.pop();
 
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                 const chat = model.startChat({ history: history });
                     
                 const prompt = lastUserMessage.content + contextFromCommand;
