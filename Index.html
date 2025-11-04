@@ -9,14 +9,8 @@
         [data-color-mode="dark"] { --color-bg-default: #0d1117; --color-bg-subtle: #161b22; --color-fg-default: #c9d1d9; --color-fg-muted: #8b949e; --color-border-default: #30363d; --color-btn-primary-bg: #238636; --color-btn-primary-hover-bg: #2ea043; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
         main { max-width: 800px; margin: auto; }
-        #container { background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; }
-        header { padding: 16px; border-bottom: 1px solid var(--color-border-default); }
-        h1 { font-size: 1.5rem; margin: 0; }
-        .tab-nav { display: flex; border-bottom: 1px solid var(--color-border-default); }
-        .tab-nav button { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 16px; color: var(--color-fg-default); font-weight: 600; cursor: pointer; margin-bottom: -1px; }
-        .tab-nav button.active { border-bottom-color: var(--color-btn-primary-bg); }
-        .tab-content { padding: 16px; }
-        #leitor-tab { display: none; }
+        .page { display: none; background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; padding: 16px; }
+        .page.active { display: block; }
         button.primary { cursor: pointer; padding: 10px 15px; border-radius: 6px; border: 1px solid rgba(27, 31, 36, 0.15); font-weight: 600; background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); width: 100%; margin-top: 10px; }
         #chat-messages { height: 400px; overflow-y: auto; border: 1px solid var(--color-border-default); padding: 10px; border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; }
         .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
@@ -29,29 +23,38 @@
 </head>
 <body>
     <main>
-        <div id="container">
-            <header><h1>IA Assistente GitHub</h1></header>
-            <div id="login-view" class="tab-content">
-                <p>Conecte-se com sua conta do GitHub para começar.</p>
-                <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
+        <section id="login-page" class="page">
+            <h1>Login</h1>
+            <p>Conecte-se com sua conta do GitHub para começar.</p>
+            <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
+            <p>Não tem uma conta? <a href="/meu-assistente-ia/Register" onclick="navigateTo(event)">Registre-se</a></p>
+        </section>
+
+        <section id="register-page" class="page">
+            <h1>Registro</h1>
+            <p>Para usar este serviço, você precisa de uma conta do GitHub.</p>
+            <a href="https://github.com/signup" target="_blank"><button class="primary">Criar conta no GitHub</button></a>
+            <p>Já tem uma conta? <a href="/meu-assistente-ia/Login" onclick="navigateTo(event)">Faça Login</a></p>
+        </section>
+
+        <section id="chat-page" class="page">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Chat com IA</h1>
+                <button onclick="startNewChat()">Novo Chat</button>
             </div>
-            <div id="app-view" style="display:none;">
-                <nav class="tab-nav">
-                    <button id="tab-leitor" onclick="switchTab('leitor')">Leitor de Arquivos</button>
-                    <button id="tab-chats" class="active" onclick="switchTab('chats')">Chats</button>
-                </nav>
-                <div id="leitor-tab" class="tab-content"></div>
-                <div id="chats-tab" class="tab-content">
-                    <div id="chat-messages"></div>
-                    <div id="chat-input">
-                        <input type="text" id="message-input" placeholder="leia o arquivo X do repo Y..." onkeydown="if(event.key==='Enter') sendMessage()">
-                        <button class="primary" onclick="sendMessage()">Enviar</button>
-                    </div>
-                    <button onclick="startNewChat()">Iniciar Novo Chat</button>
-                </div>
+            <div id="chat-messages"></div>
+            <div id="chat-input">
+                <input type="text" id="message-input" placeholder="leia o arquivo X do repo Y..." onkeydown="if(event.key==='Enter') sendMessage()">
+                <button class="primary" onclick="sendMessage()">Enviar</button>
             </div>
-        </div>
+        </section>
+        
+        <section id="not-found-page" class="page">
+            <h1>404 - Página não encontrada</h1>
+            <p>A página que você está procurando não existe. <a href="/meu-assistente-ia/" onclick="navigateTo(event)">Voltar ao início</a>.</p>
+        </section>
     </main>
+
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
@@ -71,41 +74,92 @@
         let userToken = null, currentChatId = null, unsubscribeChat = null;
         const githubUser = "Rain-Hub1";
         const repoDoAction = "meu-assistente-ia";
+        const repoName = `/${repoDoAction}`;
 
-        function switchTab(tabName) {
-            document.getElementById('leitor-tab').style.display = 'none';
-            document.getElementById('chats-tab').style.display = 'none';
-            document.getElementById('tab-leitor').classList.remove('active');
-            document.getElementById('tab-chats').classList.remove('active');
-            document.getElementById(tabName + '-tab').style.display = 'block';
-            document.getElementById('tab-' + tabName).classList.add('active');
-        }
+        // --- ROTEADOR ---
+        const navigateTo = (event) => {
+            event.preventDefault();
+            history.pushState(null, null, event.target.href);
+            urlLocationHandler();
+        };
 
+        const routes = {
+            "/Login": { page: "login-page" },
+            "/Register": { page: "register-page" },
+            "/Chat": { page: "chat-page", requiresAuth: true }
+        };
+
+        const urlLocationHandler = async () => {
+            let location = window.location.pathname.replace(repoName, "");
+            if (location.length === 0) location = "/";
+
+            const params = new URLSearchParams(window.location.search);
+            const pathFrom404 = params.get('path');
+            if (pathFrom404) {
+                location = pathFrom404.replace(repoName, "");
+                history.replaceState(null, null, repoName + location);
+            }
+
+            let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/";
+            let route = routes[routeKey] || { page: "not-found-page" };
+
+            if (route.requiresAuth && !auth.currentUser) {
+                history.replaceState(null, null, repoName + "/Login");
+                route = routes["/Login"];
+            } else if (!route.requiresAuth && auth.currentUser && (routeKey === "/Login" || routeKey === "/Register" || routeKey === "/")) {
+                const chatId = location.split('/')[2] || null;
+                const chatPath = chatId ? `/Chat/${chatId}` : '/Chat';
+                history.replaceState(null, null, repoName + chatPath);
+                route = routes["/Chat"];
+            }
+            
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(route.page).classList.add('active');
+
+            if (route.page === 'chat-page') {
+                const chatIdFromUrl = location.split('/')[2];
+                if (chatIdFromUrl && chatIdFromUrl !== currentChatId) {
+                    startOrLoadChat(chatIdFromUrl);
+                } else if (!currentChatId) {
+                    startNewChat();
+                }
+            }
+        };
+
+        window.onpopstate = urlLocationHandler;
+        window.addEventListener("DOMContentLoaded", () => {
+            auth.onAuthStateChanged(user => {
+                urlLocationHandler();
+            });
+        });
+
+        // --- LÓGICA DO APP ---
         function loginComGithub() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
             auth.signInWithPopup(provider).then(result => {
                 userToken = result.credential.accessToken;
-                document.getElementById('login-view').style.display = 'none';
-                document.getElementById('app-view').style.display = 'block';
-                startNewChat();
-                switchTab('chats');
+                urlLocationHandler();
             }).catch(error => console.error("Erro de login:", error));
         }
 
-        function startNewChat() {
+        function startOrLoadChat(chatId) {
             if (unsubscribeChat) unsubscribeChat();
-            currentChatId = `chat_${auth.currentUser.uid}_${Date.now()}`;
-            document.getElementById('chat-messages').innerHTML = '';
-            document.getElementById('message-input').value = '';
-            
-            const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
+            currentChatId = chatId;
+            history.replaceState(null, null, `${repoName}/Chat/${currentChatId}`);
+            listenToChat(currentChatId);
+        }
+
+        function startNewChat() {
+            const newChatId = `chat_${auth.currentUser.uid}_${Date.now()}`;
+            const messagesCol = db.collection('chats').doc(newChatId).collection('messages');
             messagesCol.add({
                 role: 'assistant',
-                content: 'Olá! Sou seu assistente de IA. Peça-me para ler um arquivo, como por exemplo: "leia o arquivo Index.html do repo Copilot"',
+                content: 'Olá! Sou seu assistente de IA. Peça-me para ler um arquivo.',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                startOrLoadChat(newChatId);
             });
-            listenToChat(currentChatId);
         }
 
         function listenToChat(chatId) {
@@ -141,14 +195,8 @@
 
             await fetch(`https://api.github.com/repos/${githubUser}/${repoDoAction}/actions/workflows/processar.yml/dispatches`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `token ${userToken}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify({
-                    ref: 'main',
-                    inputs: { chatId: currentChatId }
-                })
+                headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ ref: 'main', inputs: { chatId: currentChatId } })
             });
         }
     </script>
