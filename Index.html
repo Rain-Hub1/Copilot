@@ -30,9 +30,14 @@
         main { max-width: 1012px; margin: auto; }
         .layout { display: flex; gap: 24px; }
         #app-nav { display: none; flex-direction: column; gap: 4px; width: 220px; flex-shrink: 0; }
-        #app-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--color-fg-default); font-weight: 500; }
+        #app-nav a { padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--color-fg-default); font-weight: 500; display: block; }
         #app-nav a:hover { background-color: var(--color-bg-subtle); }
         #app-nav a.active { background-color: var(--color-bg-subtle); font-weight: 600; }
+        .collapsible-header { cursor: pointer; padding: 8px 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .collapsible-header .arrow { transition: transform 0.2s ease; }
+        .collapsible-header.open .arrow { transform: rotate(90deg); }
+        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .collapsible-content a { font-weight: 400; color: var(--color-fg-muted); padding-left: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #content-container { flex-grow: 1; min-width: 0; }
         .page { display: none; background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; }
         .page.active { display: block; }
@@ -43,7 +48,7 @@
         a { color: var(--color-link-fg); text-decoration: none; }
         a:hover { text-decoration: underline; }
         label { display: block; font-weight: 600; margin-bottom: 8px; }
-        input[type="email"], input[type="password"] { width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--color-border-default); background-color: var(--color-bg-default); color: var(--color-fg-default); box-sizing: border-box; }
+        input[type="email"], input[type="password"], input[type="search"] { width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--color-border-default); background-color: var(--color-bg-default); color: var(--color-fg-default); box-sizing: border-box; }
         button, .button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--color-border-default); font-weight: 600; background-color: var(--color-bg-subtle); color: var(--color-fg-default); width: 100%; margin-top: 10px; text-align: center; display: inline-block; box-sizing: border-box; }
         button.primary, .button.primary { background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); border-color: rgba(27, 31, 36, 0.15); }
         button.danger { border-color: var(--color-border-default); color: var(--color-danger-fg); }
@@ -61,13 +66,26 @@
         body.is-mobile #app-nav { width: 100%; position: fixed; top: 0; left: -100%; background-color: var(--color-bg-default); height: 100%; z-index: 100; transition: left 0.3s ease; padding-top: 60px; }
         body.is-mobile #app-nav.open { left: 0; }
         body.is-mobile #mobile-menu-button { display: block; }
+        #tab-bar { display: flex; border-bottom: 1px solid var(--color-border-default); background-color: var(--color-bg-subtle); overflow-x: auto; }
+        .tab { padding: 8px 16px; cursor: pointer; border-right: 1px solid var(--color-border-default); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+        .tab.active { background-color: var(--color-bg-default); font-weight: 600; }
+        .tab:hover { background-color: var(--color-bg-default); }
+        .tab-close { cursor: pointer; font-size: 16px; line-height: 1; padding: 2px; border-radius: 4px; }
+        .tab-close:hover { background-color: var(--color-border-default); }
+        #new-tab-button { font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
     <main id="main-layout">
         <nav id="app-nav">
             <a href="#/Home">Início</a>
-            <a href="#/New-Chat">Novo Chat</a>
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span>Chats Recentes</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div id="recent-chats-list" class="collapsible-content"></div>
+            </div>
             <a href="#/Settings">Configurações</a>
         </nav>
         <div id="content-container">
@@ -75,7 +93,7 @@
                 <div class="page-header"><h1>Bem-vindo</h1></div>
                 <div class="page-content">
                     <p>Use o menu para iniciar uma nova conversa ou gerenciar suas configurações.</p>
-                    <a href="#/New-Chat" class="button primary">Iniciar um Novo Chat</a>
+                    <a href="#/Chat" class="button primary">Abrir Chats</a>
                 </div>
             </section>
 
@@ -122,7 +140,10 @@
             <section id="chat-page" class="page">
                 <div class="page-header">
                     <button id="mobile-menu-button" onclick="toggleMobileMenu()">☰</button>
-                    <h1>Chat</h1>
+                    <input type="search" id="tab-search" placeholder="Buscar abas..." oninput="filterTabs(this.value)" style="margin: 0; flex-grow: 1;">
+                </div>
+                <div id="tab-bar">
+                    <div id="new-tab-button" class="tab" onclick="startNewChat()">+</div>
                 </div>
                 <div class="page-content">
                     <div id="chat-messages"></div>
@@ -159,7 +180,8 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        let userToken = null, currentChatId = null, unsubscribeChat = null;
+        let userToken = null, unsubscribeRecentChats = null;
+        let openTabs = [], activeTabId = null, listeners = {};
         const githubUser = "Rain-Hub1";
         const repoDoAction = "Copilot";
 
@@ -168,7 +190,6 @@
             "/Login": { page: "login-page" },
             "/Register": { page: "register-page" },
             "/Settings": { page: "settings-page", requiresAuth: true },
-            "/New-Chat": { page: "chat-page", requiresAuth: true, action: startNewChat },
             "/Chat": { page: "chat-page", requiresAuth: true }
         };
 
@@ -180,6 +201,16 @@
 
         function toggleMobileMenu() {
             document.getElementById('app-nav').classList.toggle('open');
+        }
+
+        function toggleCollapsible(header) {
+            header.classList.toggle("open");
+            const content = header.nextElementSibling;
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
         }
 
         const urlLocationHandler = async () => {
@@ -204,17 +235,6 @@
             document.querySelectorAll('#app-nav a').forEach(a => a.classList.remove('active'));
             const activeLink = document.querySelector(`#app-nav a[href="#${routeKey.split('/')[0]}"]`);
             if (activeLink) activeLink.classList.add('active');
-
-            if (route.action) {
-                route.action();
-            } else if (route.page === 'chat-page') {
-                const chatIdFromUrl = location.split('/')[2];
-                if (chatIdFromUrl && chatIdFromUrl !== currentChatId) {
-                    startOrLoadChat(chatIdFromUrl);
-                } else if (!chatIdFromUrl && user) {
-                    window.location.hash = "/New-Chat";
-                }
-            }
             
             if (route.page === 'settings-page' && user) {
                 const isGithubLinked = user.providerData.some(p => p.providerId === 'github.com');
@@ -227,17 +247,22 @@
         
         auth.onAuthStateChanged(user => {
             userToken = null;
+            if (unsubscribeRecentChats) unsubscribeRecentChats();
+            Object.values(listeners).forEach(unsub => unsub());
+            listeners = {};
+            openTabs = [];
+            activeTabId = null;
+
             if (user) {
                 const githubProvider = user.providerData.find(p => p.providerId === 'github.com');
                 if (githubProvider) {
-                    user.getIdToken(true).then(idToken => {
-                        const decodedToken = JSON.parse(atob(idToken.split('.')[1]));
-                        userToken = decodedToken.firebase.identities['github.com'][0];
-                        urlLocationHandler();
-                    });
-                    return;
+                    const credential = firebase.auth.GithubAuthProvider.credential(user.za);
+                    userToken = credential.accessToken;
                 }
+                listenToRecentChats(user.uid);
+                loadTabsFromStorage();
             }
+            renderTabs();
             urlLocationHandler();
         });
         
@@ -269,45 +294,168 @@
         function loginWithGithub() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
-            auth.signInWithPopup(provider).catch(error => displayError('login-error', error));
+            auth.signInWithPopup(provider).then(result => {
+                const credential = result.credential;
+                userToken = credential.accessToken;
+            }).catch(error => displayError('login-error', error));
         }
         
         function linkGithubAccount() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
-            auth.currentUser.linkWithPopup(provider).catch(error => alert('Erro ao conectar conta do GitHub: ' + error.message));
+            auth.currentUser.linkWithPopup(provider).then(result => {
+                const credential = result.credential;
+                userToken = credential.accessToken;
+                urlLocationHandler();
+            }).catch(error => alert('Erro ao conectar conta do GitHub: ' + error.message));
         }
 
         function logout() {
             auth.signOut();
         }
 
-        function startOrLoadChat(chatId) {
-            if (unsubscribeChat) unsubscribeChat();
-            currentChatId = chatId;
-            window.location.hash = `/Chat/${currentChatId}`;
-            listenToChat(currentChatId);
+        function saveTabsToStorage() {
+            localStorage.setItem(`tabs_${auth.currentUser.uid}`, JSON.stringify(openTabs));
+        }
+
+        function loadTabsFromStorage() {
+            const savedTabs = localStorage.getItem(`tabs_${auth.currentUser.uid}`);
+            if (savedTabs) {
+                openTabs = JSON.parse(savedTabs);
+                if (openTabs.length > 0) {
+                    setActiveTab(openTabs[0].id);
+                }
+            }
+        }
+
+        function renderTabs() {
+            const tabBar = document.getElementById('tab-bar');
+            document.querySelectorAll('.tab:not(#new-tab-button)').forEach(t => t.remove());
+            
+            openTabs.forEach(tab => {
+                const tabEl = document.createElement('div');
+                tabEl.className = 'tab';
+                tabEl.dataset.tabId = tab.id;
+                if (tab.id === activeTabId) tabEl.classList.add('active');
+                
+                const title = document.createElement('span');
+                title.textContent = tab.title;
+                
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'tab-close';
+                closeBtn.innerHTML = '&times;';
+                closeBtn.onclick = (e) => { e.stopPropagation(); closeTab(tab.id); };
+                
+                tabEl.append(title, closeBtn);
+                tabEl.onclick = () => setActiveTab(tab.id);
+                tabBar.appendChild(tabEl);
+            });
+            
+            const chatContent = document.getElementById('chat-messages');
+            chatContent.innerHTML = '';
+            if (activeTabId) {
+                const activeTabData = openTabs.find(t => t.id === activeTabId);
+                if (activeTabData) {
+                    activeTabData.messages.forEach(displayMessage);
+                    chatContent.scrollTop = chatContent.scrollHeight;
+                }
+            }
+        }
+
+        function filterTabs(query) {
+            document.querySelectorAll('.tab:not(#new-tab-button)').forEach(tabEl => {
+                const tabTitle = tabEl.querySelector('span').textContent.toLowerCase();
+                tabEl.style.display = tabTitle.includes(query.toLowerCase()) ? 'flex' : 'none';
+            });
+        }
+
+        function setActiveTab(chatId) {
+            if (!openTabs.some(t => t.id === chatId)) {
+                openTab(chatId);
+                return;
+            }
+            activeTabId = chatId;
+            if (!listeners[chatId]) {
+                listenToChat(chatId);
+            }
+            renderTabs();
+        }
+
+        function openTab(chatId, title = 'Carregando...') {
+            if (openTabs.some(t => t.id === chatId)) {
+                setActiveTab(chatId);
+                return;
+            }
+            openTabs.unshift({ id: chatId, title: title, messages: [] });
+            setActiveTab(chatId);
+            saveTabsToStorage();
+        }
+
+        function closeTab(chatId) {
+            openTabs = openTabs.filter(t => t.id !== chatId);
+            if (listeners[chatId]) {
+                listeners[chatId]();
+                delete listeners[chatId];
+            }
+            if (activeTabId === chatId) {
+                activeTabId = openTabs.length > 0 ? openTabs[0].id : null;
+                if (activeTabId) setActiveTab(activeTabId);
+            }
+            saveTabsToStorage();
+            renderTabs();
         }
 
         function startNewChat() {
             const newChatId = `chat_${auth.currentUser.uid}_${Date.now()}`;
-            const messagesCol = db.collection('chats').doc(newChatId).collection('messages');
-            messagesCol.add({
-                role: 'assistant',
-                content: 'Olá! Sou seu assistente de IA. Peça-me para criar, ler ou editar um arquivo.',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            const chatDoc = db.collection('chats').doc(newChatId);
+            chatDoc.set({
+                owner: auth.currentUser.uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: 'Novo Chat'
             }).then(() => {
-                startOrLoadChat(newChatId);
+                const messagesSubCol = chatDoc.collection('messages');
+                messagesSubCol.add({
+                    role: 'assistant',
+                    content: 'Olá! Sou seu assistente de IA. Peça-me para criar, ler ou editar um arquivo.',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    openTab(newChatId, 'Novo Chat');
+                });
             });
         }
 
         function listenToChat(chatId) {
+            if (listeners[chatId]) return;
             const messagesCol = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp');
-            unsubscribeChat = messagesCol.onSnapshot(snapshot => {
-                const chatBox = document.getElementById('chat-messages');
-                chatBox.innerHTML = '';
-                snapshot.forEach(doc => displayMessage(doc.data()));
-                chatBox.scrollTop = chatBox.scrollHeight;
+            listeners[chatId] = messagesCol.onSnapshot(snapshot => {
+                const tab = openTabs.find(t => t.id === chatId);
+                if (tab) {
+                    tab.messages = snapshot.docs.map(doc => doc.data());
+                    if (chatId === activeTabId) {
+                        renderTabs();
+                    }
+                }
+            });
+        }
+
+        function listenToRecentChats(userId) {
+            const chatsQuery = db.collection('chats').where('owner', '==', userId).orderBy('createdAt', 'desc').limit(5);
+            unsubscribeRecentChats = chatsQuery.onSnapshot(snapshot => {
+                const list = document.getElementById('recent-chats-list');
+                list.innerHTML = '';
+                if (snapshot.empty) {
+                    const noChats = document.createElement('a');
+                    noChats.textContent = 'Nenhum chat recente';
+                    list.appendChild(noChats);
+                } else {
+                    snapshot.forEach(doc => {
+                        const link = document.createElement('a');
+                        link.href = `#/Chat`;
+                        link.textContent = doc.data().lastMessage || 'Chat sem título';
+                        link.onclick = (e) => { e.preventDefault(); window.location.hash = '#/Chat'; openTab(doc.id, doc.data().lastMessage); };
+                        list.appendChild(link);
+                    });
+                }
             });
         }
 
@@ -327,20 +475,29 @@
             }
             const input = document.getElementById('message-input');
             const content = input.value.trim();
-            if (!content || !currentChatId) return;
+            if (!content || !activeTabId) return;
             input.value = '';
             
-            const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
+            const chatDoc = db.collection('chats').doc(activeTabId);
+            const messagesCol = chatDoc.collection('messages');
+            
             await messagesCol.add({
                 role: 'user',
                 content: content,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            
+            await chatDoc.update({ lastMessage: content });
+            
+            const tab = openTabs.find(t => t.id === activeTabId);
+            if (tab && tab.title === 'Novo Chat') tab.title = content.substring(0, 20) + '...';
+            saveTabsToStorage();
+            renderTabs();
 
             await fetch(`https://api.github.com/repos/${githubUser}/${repoDoAction}/actions/workflows/processar.yml/dispatches`, {
                 method: 'POST',
                 headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' },
-                body: JSON.stringify({ ref: 'main', inputs: { chatId: currentChatId } })
+                body: JSON.stringify({ ref: 'main', inputs: { chatId: activeTabId } })
             });
         }
     </script>
