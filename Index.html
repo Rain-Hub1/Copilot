@@ -8,10 +8,8 @@
         (function() {
             const K = 'github-ai-theme';
             const q = window.matchMedia('(prefers-color-scheme: dark)');
-            let theme = localStorage.getItem(K);
-            if (theme === 'auto' || !theme) {
-                theme = q.matches ? 'dark' : 'light';
-            }
+            let theme = localStorage.getItem(K) || 'auto';
+            if (theme === 'auto') { theme = q.matches ? 'dark' : 'light'; }
             document.documentElement.setAttribute('data-color-mode', theme);
         })();
     </script>
@@ -43,9 +41,12 @@
         p { color: var(--color-fg-muted); margin-top: 0; margin-bottom: 16px; }
         a { color: var(--color-link-fg); text-decoration: none; }
         a:hover { text-decoration: underline; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; }
+        input[type="email"], input[type="password"] { width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--color-border-default); background-color: var(--color-bg-default); color: var(--color-fg-default); box-sizing: border-box; }
         button, .button { cursor: pointer; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--color-border-default); font-weight: 600; background-color: var(--color-bg-subtle); color: var(--color-fg-default); width: 100%; margin-top: 10px; text-align: center; display: inline-block; box-sizing: border-box; }
         button.primary, .button.primary { background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); border-color: rgba(27, 31, 36, 0.15); }
         button.danger { border-color: var(--color-border-default); color: var(--color-danger-fg); }
+        .divider { text-align: center; margin: 16px 0; color: var(--color-fg-muted); }
         #chat-messages { height: 400px; overflow-y: auto; border: 1px solid var(--color-border-default); padding: 10px; border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; }
         .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
         .message.user { background-color: var(--color-btn-primary-bg); color: white; margin-left: auto; align-self: flex-end; }
@@ -53,6 +54,7 @@
         #chat-input { display: flex; }
         #chat-input input { flex-grow: 1; margin: 0; border-radius: 6px 0 0 6px; background-color: var(--color-bg-default); color: var(--color-fg-default); border: 1px solid var(--color-border-default); padding: 8px 12px; }
         #chat-input button { width: auto; margin: 0; border-radius: 0 6px 6px 0; }
+        #error-message { color: var(--color-danger-fg); margin-bottom: 16px; text-align: center; }
     </style>
 </head>
 <body>
@@ -74,8 +76,14 @@
             <section id="login-page" class="page">
                 <div class="page-header"><h1>Login</h1></div>
                 <div class="page-content">
-                    <p>Conecte-se com sua conta do GitHub para acessar seu assistente de IA.</p>
-                    <button class="primary" onclick="loginComGithub()">Login com GitHub</button>
+                    <div id="login-error" class="error-message"></div>
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" required>
+                    <button class="primary" onclick="loginWithEmail()">Entrar</button>
+                    <div class="divider">ou</div>
+                    <button onclick="loginWithGithub()">Login com GitHub</button>
                     <p style="text-align: center; margin-top: 16px;">Não tem uma conta? <a href="#/Register">Registre-se</a></p>
                 </div>
             </section>
@@ -83,8 +91,12 @@
             <section id="register-page" class="page">
                 <div class="page-header"><h1>Registro</h1></div>
                 <div class="page-content">
-                    <p>Para usar este serviço, você precisa de uma conta do GitHub.</p>
-                    <a href="https://github.com/signup" target="_blank" class="button primary">Criar conta no GitHub</a>
+                    <div id="register-error" class="error-message"></div>
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" required>
+                    <label for="register-password">Senha (mínimo 6 caracteres)</label>
+                    <input type="password" id="register-password" required>
+                    <button class="primary" onclick="registerWithEmail()">Criar Conta</button>
                     <p style="text-align: center; margin-top: 16px;">Já tem uma conta? <a href="#/Login">Faça Login</a></p>
                 </div>
             </section>
@@ -93,6 +105,10 @@
                 <div class="page-header"><h1>Configurações</h1></div>
                 <div class="page-content">
                     <p>Gerencie as configurações da sua conta aqui.</p>
+                    <div id="github-link-section">
+                        <p>Para permitir que a IA acesse seus repositórios, conecte sua conta do GitHub.</p>
+                        <button class="primary" onclick="linkGithubAccount()">Conectar com GitHub</button>
+                    </div>
                     <button class="danger" onclick="logout()">Sair (Logout)</button>
                 </div>
             </section>
@@ -148,10 +164,8 @@
 
         const urlLocationHandler = async () => {
             let location = window.location.hash.replace("#", "") || "/";
-            
             let routeKey = Object.keys(routes).find(key => location.startsWith(key)) || "/404";
             let route = routes[routeKey] || { page: "not-found-page" };
-
             const user = auth.currentUser;
             document.getElementById('app-nav').style.display = user ? 'flex' : 'none';
 
@@ -159,7 +173,6 @@
                 window.location.hash = "/Login";
                 return;
             }
-            
             if (!route.requiresAuth && user) {
                 window.location.hash = "/Home";
                 return;
@@ -169,7 +182,7 @@
             document.getElementById(route.page).classList.add('active');
             
             document.querySelectorAll('#app-nav a').forEach(a => a.classList.remove('active'));
-            const activeLink = document.querySelector(`#app-nav a[href="#${routeKey}"]`);
+            const activeLink = document.querySelector(`#app-nav a[href="#${routeKey.split('/')[0]}"]`);
             if (activeLink) activeLink.classList.add('active');
 
             if (route.action) {
@@ -182,27 +195,70 @@
                     window.location.hash = "/New-Chat";
                 }
             }
+            
+            if (route.page === 'settings-page' && user) {
+                const isGithubLinked = user.providerData.some(p => p.providerId === 'github.com');
+                document.getElementById('github-link-section').style.display = isGithubLinked ? 'none' : 'block';
+            }
         };
 
         window.addEventListener("hashchange", urlLocationHandler);
         
         auth.onAuthStateChanged(user => {
             if (user) {
-                const credential = firebase.auth.GithubAuthProvider.credential(user.accessToken);
-                auth.signInWithCredential(credential).then((result) => {
-                    userToken = result.credential.accessToken;
+                const githubProvider = user.providerData.find(p => p.providerId === 'github.com');
+                if (githubProvider) {
+                    user.getIdTokenResult().then(idTokenResult => {
+                        userToken = idTokenResult.claims.githubAccessToken;
+                        urlLocationHandler();
+                    });
+                } else {
+                    userToken = null;
                     urlLocationHandler();
-                }).catch(console.error);
+                }
             } else {
                 userToken = null;
                 urlLocationHandler();
             }
         });
 
-        function loginComGithub() {
+        function displayError(elementId, error) {
+            const defaultMessages = {
+                'auth/invalid-email': 'O formato do email é inválido.',
+                'auth/user-not-found': 'Nenhum usuário encontrado com este email.',
+                'auth/wrong-password': 'A senha está incorreta.',
+                'auth/email-already-in-use': 'Este email já está em uso por outra conta.',
+                'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.'
+            };
+            document.getElementById(elementId).innerText = defaultMessages[error.code] || 'Ocorreu um erro. Tente novamente.';
+        }
+
+        function registerWithEmail() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            auth.createUserWithEmailAndPassword(email, password).catch(error => displayError('register-error', error));
+        }
+
+        function loginWithEmail() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            auth.signInWithEmailAndPassword(email, password).catch(error => displayError('login-error', error));
+        }
+
+        function loginWithGithub() {
             const provider = new firebase.auth.GithubAuthProvider();
             provider.addScope('repo');
-            auth.signInWithPopup(provider).catch(error => console.error("Erro de login:", error));
+            auth.signInWithPopup(provider).catch(error => displayError('login-error', error));
+        }
+        
+        function linkGithubAccount() {
+            const provider = new firebase.auth.GithubAuthProvider();
+            provider.addScope('repo');
+            auth.currentUser.linkWithPopup(provider).then(result => {
+                const credential = result.credential;
+                userToken = credential.accessToken;
+                urlLocationHandler();
+            }).catch(error => alert('Erro ao conectar conta do GitHub: ' + error.message));
         }
 
         function logout() {
@@ -247,9 +303,14 @@
         }
 
         async function sendMessage() {
+            if (!userToken) {
+                alert('Por favor, conecte sua conta do GitHub em Configurações para usar a IA.');
+                window.location.hash = '/Settings';
+                return;
+            }
             const input = document.getElementById('message-input');
             const content = input.value.trim();
-            if (!content || !currentChatId || !userToken) return;
+            if (!content || !currentChatId) return;
             input.value = '';
             
             const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
