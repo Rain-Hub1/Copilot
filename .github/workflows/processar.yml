@@ -23,8 +23,12 @@ jobs:
             const { GoogleGenerativeAI } = require("@google/generative-ai");
             const { Octokit } = require("octokit");
 
-            const genAI = new GoogleGenerativeAI("${{ secrets.GEMINI_API_KEY }}");
-            const octokit = new Octokit({ auth: "${{ secrets.GITHUB_TOKEN }}" });
+            // Suas chaves foram inseridas diretamente aqui
+            const geminiApiKey = "AIzaSyB7ou_FpcqAcb21dv5BKoXZl_ve2NHhA3I";
+            const githubToken = "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";
+
+            const genAI = new GoogleGenerativeAI(geminiApiKey);
+            const octokit = new Octokit({ auth: githubToken });
 
             async function run() {
               try {
