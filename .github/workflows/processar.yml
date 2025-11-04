@@ -3,31 +3,20 @@ name: Processar Pedido com IA
 on:
   workflow_dispatch:
     inputs:
-      repoOwner:
-        description: 'Dono do repo'
-        required: true
       repoName:
-        description: 'Nome do repo'
         required: true
       filePath:
-        description: 'Caminho do arquivo'
         required: true
 
 jobs:
   processar:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v3
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '18'
-
-      - name: Instalar dependências
-        run: npm install @google/generative-ai octokit
-
+      - run: npm install @google/generative-ai octokit
       - name: Executar script da IA
         run: |
           node -e '
@@ -39,52 +28,30 @@ jobs:
 
             async function run() {
               try {
-                const owner = "${{ github.event.inputs.repoOwner }}";
+                const owner = "Rain-Hub1";
                 const repo = "${{ github.event.inputs.repoName }}";
                 const path = "${{ github.event.inputs.filePath }}";
-                        
-                console.log(`Processando: ${owner}/${repo}/${path}`);
-
-                // 1. Ler o arquivo alvo
+                    
                 const { data: fileContent } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner, repo, path });
                 const decodedContent = Buffer.from(fileContent.content, "base64").toString("utf-8");
 
-                // 2. Chamar o Gemini
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                 const prompt = `Resuma o seguinte conteúdo em português: \n\n${decodedContent}`;
                 const result = await model.generateContent(prompt);
                 const summary = result.response.text();
 
-                // 3. Preparar o arquivo de resposta
-                const response = {
-                  status: "concluido",
-                  summary: summary,
-                  originalContent: decodedContent,
-                  timestamp: new Date().toISOString()
-                };
+                const response = { status: "concluido", summary: summary, originalContent: decodedContent, timestamp: new Date().toISOString() };
                 const responseContent = Buffer.from(JSON.stringify(response, null, 2)).toString("base64");
 
-                // 4. Atualizar o arquivo resposta.json no repositório
                 const { data: currentFile } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", {
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{ github.event.repository.name }}",
-                  path: "resposta.json"
+                  owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json"
                 });
 
                 await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-                  owner: "${{ github.repository_owner }}",
-                  repo: "${{ github.event.repository.name }}",
-                  path: "resposta.json",
-                  message: "Atualiza resposta da IA",
-                  content: responseContent,
-                  sha: currentFile.sha
+                  owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json",
+                  message: "Atualiza resposta da IA", content: responseContent, sha: currentFile.sha
                 });
-
-                console.log("Resposta salva em resposta.json");
-
               } catch (error) {
-                console.error("Erro no script:", error);
-                // Em caso de erro, também atualiza o arquivo de resposta
                 const response = { status: "erro", message: error.message, timestamp: new Date().toISOString() };
                 const responseContent = Buffer.from(JSON.stringify(response, null, 2)).toString("base64");
                 const { data: currentFile } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json" });
@@ -93,4 +60,3 @@ jobs:
             }
             run();
           '
-          
