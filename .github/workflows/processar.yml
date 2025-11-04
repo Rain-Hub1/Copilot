@@ -1,11 +1,10 @@
-name: Processar Pedido com IA
+name: Processar Mensagem de Chat com IA (Acionado pelo Site)
 
 on:
   workflow_dispatch:
     inputs:
-      repoName:
-        required: true
-      filePath:
+      chatId:
+        description: 'ID do Chat no Firestore'
         required: true
 
 jobs:
@@ -16,50 +15,90 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - run: npm install @google/generative-ai octokit
-      - name: Executar script da IA
+      - run: npm install @google/generative-ai octokit @firebase/app @firebase/firestore
+          
+      - name: Executar Script de Chat da IA
         run: |
           node -e '
             const { GoogleGenerativeAI } = require("@google/generative-ai");
             const { Octokit } = require("octokit");
+            const { initializeApp } = require("@firebase/app");
+            const { getFirestore, collection, getDocs, addDoc, query, orderBy, serverTimestamp } = require("@firebase/firestore");
 
-            // Suas chaves foram inseridas diretamente aqui
+            const firebaseConfig = {
+              apiKey: "AIzaSyC0JUKA-uIHMpxLRtv7BwraOph3QOamxhA",
+              authDomain: "github-ai-a4fcb.firebaseapp.com",
+              projectId: "github-ai-a4fcb",
+              storageBucket: "github-ai-a4fcb.firebasestorage.app",
+              messagingSenderId: "99989504065",
+              appId: "1:99989504065:web:fa916d2c5f69d44f9006c0"
+            };
+                
             const geminiApiKey = "AIzaSyB7ou_FpcqAcb21dv5BKoXZl_ve2NHhA3I";
             const githubToken = "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";
 
             const genAI = new GoogleGenerativeAI(geminiApiKey);
             const octokit = new Octokit({ auth: githubToken });
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+
+            function parseCommand(message) {
+                const fileRegex = /leia o arquivo (.+?) do repo (.+)/i;
+                const match = message.match(fileRegex);
+                if (match) {
+                    return { command: "read_file", filePath: match[1].trim(), repoName: match[2].trim() };
+                }
+                return null;
+            }
 
             async function run() {
+              const chatId = "${{ github.event.inputs.chatId }}";
+                  
               try {
-                const owner = "Rain-Hub1";
-                const repo = "${{ github.event.inputs.repoName }}";
-                const path = "${{ github.event.inputs.filePath }}";
+                const messagesRef = collection(db, "chats", chatId, "messages");
+                const q = query(messagesRef, orderBy("timestamp"));
+                const querySnapshot = await getDocs(q);
+                const messages = querySnapshot.docs.map(doc => doc.data());
+
+                if (messages.length === 0) return;
+
+                const lastUserMessage = messages[messages.length - 1];
+                if (lastUserMessage.role !== "user") return;
+
+                const command = parseCommand(lastUserMessage.content);
+                let contextFromCommand = "";
+
+                if (command && command.command === "read_file") {
+                    const { data: fileContent } = await octokit.request("GET /repos/Rain-Hub1/{repo}/contents/{path}", {
+                        repo: command.repoName,
+                        path: command.filePath,
+                    });
+                    const decodedContent = Buffer.from(fileContent.content, "base64").toString("utf-8");
+                    contextFromCommand = `\n\nCONTEXTO DO ARQUIVO SOLICITADO (${command.filePath}):\n${decodedContent}`;
+                }
+
+                const history = messages.map(msg => ({ role: msg.role, parts: [{ text: msg.content }] }));
+                history.pop();
+
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                const chat = model.startChat({ history: history });
                     
-                const { data: fileContent } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner, repo, path });
-                const decodedContent = Buffer.from(fileContent.content, "base64").toString("utf-8");
+                const prompt = lastUserMessage.content + contextFromCommand;
+                const result = await chat.sendMessage(prompt);
+                const finalResponse = result.response.text();
 
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                const prompt = `Resuma o seguinte conteúdo em português: \n\n${decodedContent}`;
-                const result = await model.generateContent(prompt);
-                const summary = result.response.text();
-
-                const response = { status: "concluido", summary: summary, originalContent: decodedContent, timestamp: new Date().toISOString() };
-                const responseContent = Buffer.from(JSON.stringify(response, null, 2)).toString("base64");
-
-                const { data: currentFile } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", {
-                  owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json"
-                });
-
-                await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", {
-                  owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json",
-                  message: "Atualiza resposta da IA", content: responseContent, sha: currentFile.sha
+                await addDoc(messagesRef, {
+                  role: "assistant",
+                  content: finalResponse,
+                  timestamp: serverTimestamp()
                 });
               } catch (error) {
-                const response = { status: "erro", message: error.message, timestamp: new Date().toISOString() };
-                const responseContent = Buffer.from(JSON.stringify(response, null, 2)).toString("base64");
-                const { data: currentFile } = await octokit.request("GET /repos/{owner}/{repo}/contents/{path}", { owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json" });
-                await octokit.request("PUT /repos/{owner}/{repo}/contents/{path}", { owner: "${{ github.repository_owner }}", repo: "${{ github.event.repository.name }}", path: "resposta.json", message: "Erro da IA", content: responseContent, sha: currentFile.sha });
+                const messagesRef = collection(db, "chats", chatId, "messages");
+                await addDoc(messagesRef, {
+                  role: "assistant",
+                  content: `Desculpe, ocorreu um erro: ${error.message}`,
+                  timestamp: serverTimestamp()
+                });
               }
             }
             run();
