@@ -5,56 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IA Assistente GitHub</title>
     <style>
-        /* Define as variáveis de cor para o tema claro (padrão) */
-        :root {
-            --color-bg-default: #ffffff;
-            --color-bg-subtle: #f6f8fa;
-            --color-fg-default: #24292f;
-            --color-fg-muted: #57606a;
-            --color-border-default: #d0d7de;
-            --color-btn-primary-bg: #2da44e;
-            --color-btn-primary-hover-bg: #2c974b;
-            --color-btn-primary-fg: #ffffff;
-            --color-attention-subtle: #fff8c5;
-        }
-        /* Define as variáveis de cor para o tema escuro */
-        [data-color-mode="dark"] {
-            --color-bg-default: #0d1117;
-            --color-bg-subtle: #161b22;
-            --color-fg-default: #c9d1d9;
-            --color-fg-muted: #8b949e;
-            --color-border-default: #30363d;
-            --color-btn-primary-bg: #238636;
-            --color-btn-primary-hover-bg: #2ea043;
-            --color-attention-subtle: rgba(187, 128, 9, 0.15);
-        }
-        /* Aplica as cores e o layout base */
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            padding: 1rem; 
-            background-color: var(--color-bg-subtle); 
-            color: var(--color-fg-default); 
-            line-height: 1.5; 
-        }
+        :root { --color-bg-default: #ffffff; --color-bg-subtle: #f6f8fa; --color-fg-default: #24292f; --color-fg-muted: #57606a; --color-border-default: #d0d7de; --color-btn-primary-bg: #2da44e; --color-btn-primary-hover-bg: #2c974b; --color-btn-primary-fg: #ffffff; }
+        [data-color-mode="dark"] { --color-bg-default: #0d1117; --color-bg-subtle: #161b22; --color-fg-default: #c9d1d9; --color-fg-muted: #8b949e; --color-border-default: #30363d; --color-btn-primary-bg: #238636; --color-btn-primary-hover-bg: #2ea043; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 1rem; background-color: var(--color-bg-subtle); color: var(--color-fg-default); line-height: 1.5; }
         main { max-width: 800px; margin: auto; }
         #container { background-color: var(--color-bg-default); border: 1px solid var(--color-border-default); border-radius: 6px; }
         header { padding: 16px; border-bottom: 1px solid var(--color-border-default); }
         h1 { font-size: 1.5rem; margin: 0; }
-        h2 { border-bottom: 1px solid var(--color-border-default); padding-bottom: 8px; }
-        p { color: var(--color-fg-muted); }
         .tab-nav { display: flex; border-bottom: 1px solid var(--color-border-default); }
         .tab-nav button { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 16px; color: var(--color-fg-default); font-weight: 600; cursor: pointer; margin-bottom: -1px; }
         .tab-nav button.active { border-bottom-color: var(--color-btn-primary-bg); }
         .tab-content { padding: 16px; }
-        #chats-tab { display: none; }
+        #leitor-tab { display: none; }
         button.primary { cursor: pointer; padding: 10px 15px; border-radius: 6px; border: 1px solid rgba(27, 31, 36, 0.15); font-weight: 600; background-color: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); width: 100%; margin-top: 10px; }
-        button.primary:hover { background-color: var(--color-btn-primary-hover-bg); }
-        select, input { width: 100%; padding: 8px 12px; margin-bottom: 16px; border-radius: 6px; border: 1px solid var(--color-border-default); background-color: var(--color-bg-default); color: var(--color-fg-default); box-sizing: border-box; }
-        label { font-weight: 600; display: block; margin-bottom: 8px; color: var(--color-fg-default); }
-        hr { border: none; border-top: 1px solid var(--color-border-default); margin: 16px 0; }
-        pre { background-color: var(--color-bg-subtle); padding: 16px; white-space: pre-wrap; word-wrap: break-word; border-radius: 6px; border: 1px solid var(--color-border-default); font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 0.875rem; }
-        #summary { color: var(--color-fg-default); background-color: var(--color-attention-subtle); padding: 8px; border-radius: 6px; }
+        #chat-messages { height: 400px; overflow-y: auto; border: 1px solid var(--color-border-default); padding: 10px; border-radius: 6px; margin-bottom: 10px; display: flex; flex-direction: column; }
+        .message { padding: 8px 12px; border-radius: 18px; margin-bottom: 8px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
+        .message.user { background-color: var(--color-btn-primary-bg); color: white; margin-left: auto; align-self: flex-end; }
+        .message.assistant { background-color: var(--color-bg-subtle); border: 1px solid var(--color-border-default); align-self: flex-start; }
+        #chat-input { display: flex; }
+        #chat-input input { flex-grow: 1; margin: 0; border-radius: 6px 0 0 6px; }
+        #chat-input button { width: auto; margin: 0; border-radius: 0 6px 6px 0; }
     </style>
 </head>
 <body>
@@ -67,33 +37,25 @@
             </div>
             <div id="app-view" style="display:none;">
                 <nav class="tab-nav">
-                    <button id="tab-leitor" class="active" onclick="switchTab('leitor')">Leitor de Arquivos</button>
-                    <button id="tab-chats" onclick="switchTab('chats')">Chats</button>
+                    <button id="tab-leitor" onclick="switchTab('leitor')">Leitor de Arquivos</button>
+                    <button id="tab-chats" class="active" onclick="switchTab('chats')">Chats</button>
                 </nav>
-                <div id="leitor-tab" class="tab-content">
-                    <p>Selecione um repositório e um arquivo para a IA ler e resumir.</p>
-                    <label for="repo-select">Seus Repositórios:</label>
-                    <select id="repo-select" onchange="listarArquivos(this.value)"></select>
-                    <label for="file-select">Arquivos no Repositório:</label>
-                    <select id="file-select"></select>
-                    <button class="primary" onclick="dispararAction()">Ler e Resumir com IA</button>
-                    <hr>
-                    <h2>Resultado:</h2>
-                    <p id="summary">Aguardando comando...</p>
-                    <pre id="content"></pre>
-                </div>
+                <div id="leitor-tab" class="tab-content"></div>
                 <div id="chats-tab" class="tab-content">
-                    <h2>Chat com a IA</h2>
-                    <p>Funcionalidade em desenvolvimento.</p>
+                    <div id="chat-messages"></div>
+                    <div id="chat-input">
+                        <input type="text" id="message-input" placeholder="leia o arquivo X do repo Y..." onkeydown="if(event.key==='Enter') sendMessage()">
+                        <button class="primary" onclick="sendMessage()">Enviar</button>
+                    </div>
+                    <button onclick="startNewChat()">Iniciar Novo Chat</button>
                 </div>
             </div>
         </div>
     </main>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script>
-        // O JavaScript continua exatamente o mesmo da resposta anterior.
-        // Cole aqui o bloco <script> completo, incluindo a firebaseConfig.
         const firebaseConfig = {
           apiKey: "AIzaSyC0JUKA-uIHMpxLRtv7BwraOph3QOamxhA",
           authDomain: "github-ai-a4fcb.firebaseapp.com",
@@ -105,7 +67,8 @@
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        let userToken = null, lastTimestamp = null, intervalId = null;
+        const db = firebase.firestore();
+        let userToken = null, currentChatId = null, unsubscribeChat = null;
         const githubUser = "Rain-Hub1";
         const repoDoAction = "meu-assistente-ia";
 
@@ -125,81 +88,68 @@
                 userToken = result.credential.accessToken;
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('app-view').style.display = 'block';
-                switchTab('leitor');
-                listarRepositorios();
+                startNewChat();
+                switchTab('chats');
             }).catch(error => console.error("Erro de login:", error));
         }
 
-        async function listarRepositorios() {
-            const select = document.getElementById('repo-select');
-            select.innerHTML = '<option>Carregando...</option>';
-            const response = await fetch(`https://api.github.com/users/${githubUser}/repos?sort=updated`, {
-                headers: { 'Authorization': `token ${userToken}` }
-            });
-            const repos = await response.json();
-            select.innerHTML = '<option value="">Selecione um repositório</option>';
-            repos.forEach(repo => {
-                const option = new Option(repo.name, repo.name);
-                select.add(option);
-            });
-        }
-
-        async function listarArquivos(repoName) {
-            const select = document.getElementById('file-select');
-            if (!repoName) { select.innerHTML = ''; return; }
-            select.innerHTML = '<option>Carregando...</option>';
-            const response = await fetch(`https://api.github.com/repos/${githubUser}/${repoName}/contents/`, {
-                headers: { 'Authorization': `token ${userToken}` }
-            });
-            const files = await response.json();
-            select.innerHTML = '<option value="">Selecione um arquivo</option>';
-            files.filter(file => file.type === 'file').forEach(file => {
-                const option = new Option(file.path, file.path);
-                select.add(option);
-            });
-        }
-
-        async function dispararAction() {
-            if (!userToken) { alert("Faça o login primeiro!"); return; }
-            const repoName = document.getElementById('repo-select').value;
-            const filePath = document.getElementById('file-select').value;
-            if (!repoName || !filePath) { alert("Por favor, selecione um repositório e um arquivo."); return; }
+        function startNewChat() {
+            if (unsubscribeChat) unsubscribeChat();
+            currentChatId = `chat_${auth.currentUser.uid}_${Date.now()}`;
+            document.getElementById('chat-messages').innerHTML = '';
+            document.getElementById('message-input').value = '';
             
-            document.getElementById('summary').innerText = 'Disparando a IA no GitHub Actions... O resultado pode levar até 2 minutos.';
-            document.getElementById('content').innerText = '';
-            if (intervalId) clearInterval(intervalId);
+            const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
+            messagesCol.add({
+                role: 'assistant',
+                content: 'Olá! Sou seu assistente de IA. Peça-me para ler um arquivo, como por exemplo: "leia o arquivo Index.html do repo Copilot"',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            listenToChat(currentChatId);
+        }
+
+        function listenToChat(chatId) {
+            const messagesCol = db.collection('chats').doc(chatId).collection('messages').orderBy('timestamp');
+            unsubscribeChat = messagesCol.onSnapshot(snapshot => {
+                const chatBox = document.getElementById('chat-messages');
+                chatBox.innerHTML = '';
+                snapshot.forEach(doc => displayMessage(doc.data()));
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        function displayMessage(message) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', message.role);
+            msgDiv.textContent = message.content;
+            chatBox.appendChild(msgDiv);
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            if (!content || !currentChatId || !userToken) return;
+            input.value = '';
+            
+            const messagesCol = db.collection('chats').doc(currentChatId).collection('messages');
+            await messagesCol.add({
+                role: 'user',
+                content: content,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
             await fetch(`https://api.github.com/repos/${githubUser}/${repoDoAction}/actions/workflows/processar.yml/dispatches`, {
                 method: 'POST',
-                headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' },
-                body: JSON.stringify({ ref: 'main', inputs: { repoName, filePath } })
+                headers: {
+                    'Authorization': `token ${userToken}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+                body: JSON.stringify({
+                    ref: 'main',
+                    inputs: { chatId: currentChatId }
+                })
             });
-            
-            setTimeout(() => {
-                lastTimestamp = null;
-                verificarResposta();
-                intervalId = setInterval(verificarResposta, 7000);
-            }, 15000);
-        }
-
-        async function verificarResposta() {
-            const url = `https://raw.githubusercontent.com/${githubUser}/${repoDoAction}/main/resposta.json?t=${Date.now()}`;
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.timestamp && data.timestamp !== lastTimestamp) {
-                lastTimestamp = data.timestamp;
-                clearInterval(intervalId);
-                if (data.status === 'concluido') {
-                    document.getElementById('summary').innerText = data.summary;
-                    document.getElementById('content').innerText = data.originalContent;
-                } else if (data.status === 'erro') {
-                    document.getElementById('summary').innerText = `Erro na IA: ${data.message}`;
-                    document.getElementById('content').innerText = '';
-                }
-            } else {
-                document.getElementById('summary').innerText += ".";
-            }
         }
     </script>
 </body>
