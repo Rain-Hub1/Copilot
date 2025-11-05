@@ -1,4 +1,3 @@
-/* 1. Configuração de Variáveis e Estilo Base */
 :root {
     --bg-color: #0d1117;
     --border-color: #30363d;
@@ -15,14 +14,13 @@ body {
     margin: 0;
     background-color: var(--bg-color);
     color: var(--text-color);
-    font-size: 16px; /* Base para unidades rem */
+    font-size: 16px;
 }
 
-/* 2. Layout Principal (Auto Ajuste) */
 #app {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Ocupa a altura total da tela */
+    height: 100vh;
     max-width: 800px;
     margin: 0 auto;
     background-color: var(--bg-color);
@@ -34,7 +32,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-shrink: 0; /* Impede que o header encolha */
+    flex-shrink: 0;
 }
 
 header h1 {
@@ -45,8 +43,8 @@ header h1 {
 }
 
 main {
-    flex-grow: 1; /* Ocupa todo o espaço restante */
-    overflow-y: auto; /* Permite rolar os comentários */
+    flex-grow: 1;
+    overflow-y: auto;
     padding: 1rem;
 }
 
@@ -54,10 +52,9 @@ footer {
     border-top: 1px solid var(--border-color);
     padding: 0.5rem 1rem;
     background-color: var(--bg-color);
-    flex-shrink: 0; /* Impede que o footer encolha */
+    flex-shrink: 0;
 }
 
-/* 3. Componentes do Chat */
 .comment {
     display: flex;
     flex-direction: column;
@@ -85,7 +82,7 @@ footer {
 .comment p {
     margin: 0;
     line-height: 1.5;
-    word-wrap: break-word; /* Quebra palavras longas */
+    word-wrap: break-word;
 }
 
 .comment-actions {
@@ -115,7 +112,11 @@ footer {
     color: var(--danger-color);
 }
 
-/* 4. Formulário de Envio */
+.comment-actions svg {
+    width: 16px;
+    height: 16px;
+}
+
 #message-form {
     display: flex;
     align-items: center;
@@ -159,9 +160,8 @@ footer {
     cursor: not-allowed;
 }
 
-/* 5. Autenticação e Loader */
 #auth-container button {
-    background-color: #238636; /* Verde do GitHub */
+    background-color: #238636;
     color: white;
     border: 1px solid rgba(240, 246, 252, 0.1);
     padding: 0.4rem 0.8rem;
@@ -171,8 +171,13 @@ footer {
     font-size: 0.9rem;
 }
 
-#auth-container button:hover {
-    background-color: #2ea043;
+#auth-container button#logout-btn {
+    background-color: var(--comment-bg-color);
+    border-color: var(--border-color);
+}
+#auth-container button#logout-btn:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
 }
 
 .loader {
