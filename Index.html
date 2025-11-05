@@ -8,28 +8,82 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>// Dev Comments</h1>
-            <div id="auth-container"></div>
-        </header>
+    <!-- O contêiner principal onde as "páginas" serão renderizadas -->
+    <div id="root"></div>
 
-        <main id="chat-container">
-            <div id="loader" class="loader">Carregando...</div>
-            <div id="messages-list"></div>
-        </main>
+    <!-- Template para a página do Chat -->
+    <template id="template-chat">
+        <div id="app">
+            <header>
+                <h1>// Dev Comments</h1>
+                <div id="auth-container">
+                    <button id="logout-btn">Sair</button>
+                </div>
+            </header>
+            <main id="chat-container">
+                <div id="loader" class="loader">Carregando...</div>
+                <div id="messages-list"></div>
+            </main>
+            <footer>
+                <form id="message-form">
+                    <input type="text" id="message-input" placeholder="Escreva um comentário..." autocomplete="off">
+                    <button type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                        </svg>
+                    </button>
+                </form>
+            </footer>
+        </div>
+    </template>
 
-        <footer>
-            <form id="message-form">
-                <input type="text" id="message-input" placeholder="Escreva um comentário..." autocomplete="off" disabled>
-                <button type="submit" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-                        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                    </svg>
-                </button>
-            </form>
-        </footer>
-    </div>
+    <!-- Template para a página de Login -->
+    <template id="template-login">
+        <div class="auth-page">
+            <div class="auth-form-container">
+                <h1>Login</h1>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-button">Entrar</button>
+                    <p id="error-message" class="error-message"></p>
+                </form>
+                <div class="auth-switch">
+                    <p>Não tem uma conta? <a href="#/signup">Crie uma conta</a></p>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Template para a página de Cadastro -->
+    <template id="template-signup">
+        <div class="auth-page">
+            <div class="auth-form-container">
+                <h1>Criar Conta</h1>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Senha</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="auth-button">Criar Conta</button>
+                    <p id="error-message" class="error-message"></p>
+                </form>
+                <div class="auth-switch">
+                    <p>Já tem uma conta? <a href="#/login">Faça login</a></p>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <script src="app.js"></script>
 </body>
