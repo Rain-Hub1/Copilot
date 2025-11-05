@@ -1,7 +1,7 @@
 // --- 1. CONFIGURAÇÃO DO SUPABASE ---
 // Cole suas chaves da API do Supabase aqui
-const SUPABASE_URL = 'SUA_URL_DO_PROJETO_SUPABASE';
-const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_PUBLICA';
+const SUPABASE_URL = 'https://ypfbzkgjhukjbgpxudxw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwZmJ6a2dqaHVramJncHh1ZHh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzNzAxOTcsImV4cCI6MjA3Nzk0NjE5N30.t3JQWZXw5_Aer-cCdad9XcWE129h_or88LcqKmn0WMc';
 
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
