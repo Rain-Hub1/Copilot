@@ -1,0 +1,108 @@
+/* Estilo geral e para mobile */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: #f0f2f5;
+    color: #1c1e21;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 600px; /* Limita a largura em telas maiores */
+    margin: 0 auto;
+    background-color: #fff;
+}
+
+header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+#auth-container button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+main {
+    flex-grow: 1;
+    overflow-y: auto; /* Permite rolar os comentários */
+    padding: 10px;
+}
+
+.comment {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #f0f2f5;
+}
+
+.comment-header {
+    font-size: 0.8rem;
+    color: #65676b;
+    margin-bottom: 5px;
+}
+
+.comment-actions {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    margin-top: 8px;
+}
+
+.comment-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #65676b;
+    padding: 0;
+}
+
+.comment-actions button.delete-btn {
+    color: #e74c3c;
+}
+
+footer {
+    border-top: 1px solid #ddd;
+    padding: 10px;
+}
+
+#message-form {
+    display: flex;
+}
+
+#message-input {
+    flex-grow: 1;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 10px 15px;
+    margin-right: 10px;
+}
+
+#message-form button {
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+#message-form input:disabled, #message-form button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
