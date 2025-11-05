@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat de Comentários</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Comentários</h1>
+            <div id="auth-container">
+                
+            </div>
+        </header>
 
+        <main id="chat-container">
+            <div id="messages-list">
+                
+            </div>
+        </main>
+
+        <footer>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Digite seu comentário..." autocomplete="off" disabled>
+                <button type="submit" disabled>Enviar</button>
+            </form>
+        </footer>
+    </div>
+
+    
+    <script src="app.js"></script>
+</body>
+</html>
