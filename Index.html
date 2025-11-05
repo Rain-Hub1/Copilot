@@ -3,35 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat de Comentários</title>
+    <title>Dev Comments</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>Comentários</h1>
+            <h1>// Dev Comments</h1>
             <div id="auth-container">
                 
             </div>
         </header>
 
         <main id="chat-container">
+            <div id="loader" class="loader">Carregando...</div>
             <div id="messages-list">
-                
+            
             </div>
         </main>
 
         <footer>
             <form id="message-form">
-                <input type="text" id="message-input" placeholder="Digite seu comentário..." autocomplete="off" disabled>
-                <button type="submit" disabled>Enviar</button>
+                <input type="text" id="message-input" placeholder="Escreva um comentário..." autocomplete="off" disabled>
+                <button type="submit" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                    </svg>
+                </button>
             </form>
         </footer>
     </div>
 
-    
     <script src="app.js"></script>
 </body>
 </html>
