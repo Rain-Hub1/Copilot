@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Comments (Anônimo)</title>
+    <title>Dev Comments (com Imagens)</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
 </head>
@@ -17,13 +17,19 @@
             <div id="messages-list"></div>
         </main>
         <footer>
+            <div id="image-preview" style="display: none;">
+                <img id="preview-image" src="" alt="Preview">
+                <button id="remove-image-btn">X</button>
+            </div>
             <form id="message-form">
+                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                <button type="button" id="image-upload-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 18.75V9.52l4.15-4.15a.75.75 0 0 1 1.06 0l4.34 4.34 2.2-2.2a.75.75 0 0 1 1.06 0l3.19 3.19V6a.75.75 0 0 0-.75-.75H3.75a.75.75 0 0 0-.75.75v12.75ZM12 12.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path></svg>
+                </button>
                 <input type="text" id="username-input" placeholder="Seu nome..." required>
-                <input type="text" id="message-input" placeholder="Escreva um comentário..." required>
+                <input type="text" id="message-input" placeholder="Escreva um comentário...">
                 <button type="submit">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-                        <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"></path></svg>
                 </button>
             </form>
         </footer>
