@@ -1,5 +1,5 @@
-const PARSE_APPLICATION_ID = 'SUA_APP_ID';
-const PARSE_JAVASCRIPT_KEY = 'SUA_JS_KEY';
+const PARSE_APPLICATION_ID = 'Tk5Zxhr0L5RZkXu8xTAn0uBYCOJcD9Z0JctLnmTz';
+const PARSE_JAVASCRIPT_KEY = 'SXU64wQdwWggMcOOAz4OCqQ8KnBrBeCGiREtGkNi';
 Parse.initialize(PARSE_APPLICATION_ID, PARSE_JAVASCRIPT_KEY);
 Parse.serverURL = 'https://parseapi.back4app.com/';
 
