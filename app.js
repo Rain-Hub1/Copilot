@@ -3,12 +3,17 @@ const PARSE_JAVASCRIPT_KEY = 'SXU64wQdwWggMcOOAz4OCqQ8KnBrBeCGiREtGkNi';
 Parse.initialize(PARSE_APPLICATION_ID, PARSE_JAVASCRIPT_KEY);
 Parse.serverURL = 'https://parseapi.back4app.com/';
 
-// Elementos Globais
 const messagesList = document.querySelector('#messages-list');
 const loader = document.querySelector('#loader');
 const usernameInput = document.querySelector('#username-input');
 
-// Lógica do Chat
+const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = error => reject(error);
+});
+
 const attachChatListeners = () => {
     let selectedFile = null;
     const messageForm = document.querySelector('#message-form');
@@ -17,18 +22,15 @@ const attachChatListeners = () => {
     const imagePreviewContainer = document.querySelector('#image-preview');
     const previewImage = document.querySelector('#preview-image');
     const removeImageBtn = document.querySelector('#remove-image-btn');
+    const sendBtn = document.querySelector('.send-btn');
 
     document.querySelector('#image-upload-btn').addEventListener('click', () => fileInput.click());
     
     fileInput.addEventListener('change', (e) => {
         if (e.target.files && e.target.files[0]) {
             selectedFile = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                previewImage.src = event.target.result;
-                imagePreviewContainer.style.display = 'block';
-            };
-            reader.readAsDataURL(selectedFile);
+            previewImage.src = URL.createObjectURL(selectedFile);
+            imagePreviewContainer.style.display = 'block';
         }
     });
 
@@ -44,24 +46,28 @@ const attachChatListeners = () => {
         const content = messageInput.value.trim();
 
         if (!username || (!content && !selectedFile)) return;
-
-        const Comentario = Parse.Object.extend("Comentarios");
-        const comentario = new Comentario();
-        comentario.set("username", username);
-        if (content) comentario.set("content", content);
-        comentario.set("likes", 0);
+        
+        sendBtn.disabled = true;
+        let params = { username, content };
 
         if (selectedFile) {
-            const parseFile = new Parse.File(selectedFile.name, selectedFile);
-            await parseFile.save();
-            comentario.set("image", parseFile);
+            params.fileData = await fileToBase64(selectedFile);
+            params.fileName = selectedFile.name;
         }
         
         try {
-            await comentario.save();
+            const savedComment = await Parse.Cloud.run("postComment", params);
+            const tempParseObject = Parse.Object.fromJSON(savedComment);
+            displayComment(tempParseObject);
+
             messageInput.value = '';
             removeImageBtn.click();
-        } catch (error) { console.error("Erro ao salvar:", error); }
+        } catch (error) {
+            console.error("Erro ao chamar Cloud Code:", error);
+            alert("Não foi possível enviar o comentário.");
+        } finally {
+            sendBtn.disabled = false;
+        }
     });
 };
 
@@ -75,7 +81,9 @@ const fetchComments = async () => {
         messagesList.innerHTML = '';
         comments.forEach(displayComment);
         messagesList.scrollTop = messagesList.scrollHeight;
-    } catch (error) { console.error("Erro ao buscar:", error); }
+    } catch (error) {
+        console.error("Erro ao buscar:", error);
+    }
 };
 
 const displayComment = (comment) => {
@@ -114,7 +122,9 @@ const deleteComment = async (id) => {
     try {
         const comentario = await query.get(id);
         await comentario.destroy();
-    } catch (error) { console.error("Erro ao deletar:", error); }
+    } catch (error) {
+        console.error("Erro ao deletar:", error);
+    }
 };
 
 const likeComment = async (id) => {
@@ -123,20 +133,15 @@ const likeComment = async (id) => {
         const comentario = await query.get(id);
         comentario.increment("likes");
         await comentario.save();
-    } catch (error) { console.error("Erro ao curtir:", error); }
+    } catch (error) {
+        console.error("Erro ao curtir:", error);
+    }
 };
 
 const listenToChanges = async () => {
     const query = new Parse.Query('Comentarios');
     const subscription = await query.subscribe();
 
-    subscription.on('create', (comment) => {
-        const isScrolledToBottom = messagesList.scrollHeight - messagesList.clientHeight <= messagesList.scrollTop + 1;
-        displayComment(comment);
-        if (isScrolledToBottom) {
-            messagesList.scrollTop = messagesList.scrollHeight;
-        }
-    });
     subscription.on('update', (comment) => {
         const likeButtonSpan = document.querySelector(`#comment-${comment.id} .like-btn span`);
         if (likeButtonSpan) {
@@ -148,7 +153,6 @@ const listenToChanges = async () => {
     });
 };
 
-// Lógica do Modal de Configurações
 const attachSettingsListeners = () => {
     const settingsBtn = document.querySelector('#settings-btn');
     const settingsModal = document.querySelector('#settings-modal');
@@ -182,7 +186,6 @@ const attachSettingsListeners = () => {
     });
 };
 
-// Função Principal de Inicialização
 const init = async () => {
     usernameInput.value = localStorage.getItem('chatUsername') || '';
     attachChatListeners();
