@@ -3,37 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Comments (com Imagens)</title>
+    <title>Dev Comments</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>// Dev Comments</h1>
-        </header>
-        <main id="chat-container">
-            <div id="loader" class="loader">Carregando...</div>
-            <div id="messages-list"></div>
-        </main>
-        <footer>
-            <div id="image-preview" style="display: none;">
-                <img id="preview-image" src="" alt="Preview">
-                <button id="remove-image-btn">X</button>
-            </div>
-            <form id="message-form">
-                <input type="file" id="file-input" accept="image/*" style="display: none;">
-                <button type="button" id="image-upload-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 18.75V9.52l4.15-4.15a.75.75 0 0 1 1.06 0l4.34 4.34 2.2-2.2a.75.75 0 0 1 1.06 0l3.19 3.19V6a.75.75 0 0 0-.75-.75H3.75a.75.75 0 0 0-.75.75v12.75ZM12 12.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path></svg>
+    <div id="root"></div>
+
+    <!-- Template para a página do Chat -->
+    <template id="template-chat">
+        <div id="app">
+            <header>
+                <h1>// Dev Comments</h1>
+                <button id="settings-btn" class="header-icon-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.946 1.544l-.261 1.21c-.437.213-.85.48-1.23.79l-1.08.282a1.996 1.996 0 0 0-2.028 1.028l-1.028 2.028a1.996 1.996 0 0 0 .282 2.028l.812.812c-.05.25-.09.508-.118.77l-.282 1.08a1.996 1.996 0 0 0 1.028 2.028l2.028 1.028a1.996 1.996 0 0 0 2.028-.282l1.08-.282c.38.31.793.577 1.23.79l.261 1.21a1.996 1.996 0 0 0 1.544 1.946h2.028a1.996 1.996 0 0 0 1.946-1.544l.261-1.21c.437-.213.85-.48 1.23-.79l1.08.282a1.996 1.996 0 0 0 2.028-1.028l1.028-2.028a1.996 1.996 0 0 0-.282-2.028l-.812-.812c.05-.25.09-.508.118-.77l.282-1.08a1.996 1.996 0 0 0-1.028-2.028l-2.028-1.028a1.996 1.996 0 0 0-2.028.282l-1.08.282c-.38-.31-.793-.577-1.23-.79l-.261-1.21A1.996 1.996 0 0 0 14.922 2.25h-2.028Zm-1.422 9.75a3.375 3.375 0 1 0 6.75 0 3.375 3.375 0 0 0-6.75 0Z" clip-rule="evenodd" />
+                    </svg>
                 </button>
-                <input type="text" id="username-input" placeholder="Seu nome..." required>
-                <input type="text" id="message-input" placeholder="Escreva um comentário...">
-                <button type="submit">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"></path></svg>
+            </header>
+            <main id="chat-container">
+                <div id="loader" class="loader">Carregando...</div>
+                <div id="messages-list"></div>
+            </main>
+            <footer>
+                <div id="image-preview" style="display: none;">
+                    <img id="preview-image" src="" alt="Preview">
+                    <button id="remove-image-btn">X</button>
+                </div>
+                <form id="message-form">
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    <button type="button" id="image-upload-btn" class="icon-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 18.75V9.52l4.15-4.15a.75.75 0 0 1 1.06 0l4.34 4.34 2.2-2.2a.75.75 0 0 1 1.06 0l3.19 3.19V6a.75.75 0 0 0-.75-.75H3.75a.75.75 0 0 0-.75.75v12.75ZM12 12.25a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path></svg>
+                    </button>
+                    <div class="input-group">
+                        <input type="text" id="username-input" placeholder="Seu nome..." required>
+                        <input type="text" id="message-input" placeholder="Escreva um comentário...">
+                    </div>
+                    <button type="submit" class="icon-btn send-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"></path></svg>
+                    </button>
+                </form>
+            </footer>
+        </div>
+    </template>
+
+    <!-- NOVO: Template para a página de Configurações -->
+    <template id="template-settings">
+        <div id="app">
+            <header>
+                <button id="back-btn" class="header-icon-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                        <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z" clip-rule="evenodd" />
+                    </svg>
                 </button>
-            </form>
-        </footer>
-    </div>
-    <script src="app.js"></script>
+                <h1>// Configurações</h1>
+            </header>
+            <main class="settings-main">
+                <div class="settings-group">
+                    <label for="username-setting">Seu Nome de Usuário</label>
+                    <input type="text" id="username-setting" placeholder="Digite seu nome...">
+                    <p class="settings-hint">Este nome será usado em todos os seus comentários.</p>
+                </div>
+                <button id="save-settings-btn" class="settings-save-btn">Salvar</button>
+            </main>
+        </div>
+    </template>
+
 </body>
 </html>
