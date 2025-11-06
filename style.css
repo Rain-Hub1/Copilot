@@ -1,138 +1,110 @@
+/* 1. VARIÁVEIS E CONFIGURAÇÃO GLOBAL */
 :root {
-    --bg-primary: #0d1117;
+    --bg-color: #0d1117;
     --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --border-default: #30363d;
-    --border-muted: #21262d;
+    --border-color: #30363d;
     --text-primary: #e6edf3;
     --text-secondary: #7d8590;
-    --text-tertiary: #6e7681;
     --accent-primary: #2f81f7;
-    --accent-emphasis: #1f6feb;
-    --accent-muted: rgba(56, 139, 253, 0.15);
-    --success: #238636;
-    --success-emphasis: #2ea043;
-    --danger: #da3633;
-    --danger-emphasis: #f85149;
-    --shadow-sm: 0 1px 0 rgba(1, 4, 9, 0.15);
-    --shadow-md: 0 3px 6px rgba(1, 4, 9, 0.15);
-    --shadow-lg: 0 8px 24px rgba(1, 4, 9, 0.2);
+    --accent-hover: #58a6ff;
+    --danger-primary: #da3633;
+    --danger-hover: #f85149;
+    --success-primary: #238636;
+    --success-hover: #2ea043;
+
+    /* Adiciona suporte para áreas seguras em iPhones */
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
 }
 
-* {
+*, *::before, *::after {
     box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
     margin: 0;
-    padding: 0;
-    background-color: var(--bg-primary);
+    background-color: var(--bg-color);
     color: var(--text-primary);
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 100%; /* Base para unidades rem (geralmente 16px) */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain; /* Impede o "pull-to-refresh" indesejado */
 }
 
+/* 2. LAYOUT PRINCIPAL DA APLICAÇÃO */
 #app, .auth-page {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    max-width: 1280px;
-    margin: 0 auto;
+    height: 100vh;
+    height: -webkit-fill-available; /* Garante 100% de altura em navegadores mobile */
+    background-color: var(--bg-color);
 }
 
-.auth-page {
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-}
-
-/* Header Styles */
 header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    padding: 16px 32px;
-    border-bottom: 1px solid var(--border-default);
-    background-color: var(--bg-primary);
+    padding: 0.8rem 1rem;
+    padding-top: calc(0.8rem + var(--safe-area-top)); /* Respeita o notch */
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+    background-color: var(--bg-secondary);
 }
 
 header h1 {
     margin: 0;
-    font-size: 14px;
+    font-size: 1rem;
     font-weight: 600;
-    color: var(--text-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    color: var(--text-secondary);
 }
 
-/* Main Content */
 main {
-    flex: 1;
+    flex-grow: 1;
     overflow-y: auto;
-    padding: 24px 32px;
-    max-width: 900px;
-    width: 100%;
-    margin: 0 auto;
+    padding: 1rem;
 }
 
-/* Footer */
 footer {
-    position: sticky;
-    bottom: 0;
-    border-top: 1px solid var(--border-default);
-    padding: 16px 32px;
-    background-color: var(--bg-primary);
-    backdrop-filter: blur(12px);
-}
-
-/* Comment Styles */
-.comment {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
-    margin-bottom: 16px;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + var(--safe-area-bottom)); /* Respeita a barra de gestos */
+    border-top: 1px solid var(--border-color);
     background-color: var(--bg-secondary);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0;
 }
 
-.comment:hover {
-    border-color: var(--border-muted);
+/* 3. COMPONENTES DO CHAT */
+.comment {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background-color: var(--bg-secondary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+.comment:active {
+    transform: scale(0.99); /* Feedback sutil ao tocar no comentário */
 }
 
 .comment-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    font-size: 12px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
+    margin-bottom: 0.5rem;
 }
 
 .comment-header strong {
     font-weight: 600;
     color: var(--text-primary);
-    font-size: 14px;
-}
-
-.comment-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .comment p {
-    margin: 0 0 12px 0;
+    margin: 0;
+    font-size: 0.95rem;
     line-height: 1.6;
     word-wrap: break-word;
     color: var(--text-primary);
@@ -140,10 +112,9 @@ footer {
 
 .comment-actions {
     display: flex;
-    gap: 16px;
-    align-items: center;
-    padding-top: 8px;
-    border-top: 1px solid var(--border-muted);
+    gap: 1.25rem;
+    font-size: 0.85rem;
+    margin-top: 1rem;
 }
 
 .comment-actions button {
@@ -151,265 +122,139 @@ footer {
     border: none;
     cursor: pointer;
     color: var(--text-secondary);
-    padding: 4px 8px;
+    padding: 0.25rem; /* Aumenta a área de toque */
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-weight: 500;
-    font-size: 12px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    gap: 0.4rem;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: color 0.2s, background-color 0.2s;
 }
 
-.comment-actions button:hover {
-    color: var(--accent-primary);
-    background-color: var(--accent-muted);
-}
+.comment-actions button:hover { color: var(--accent-hover); }
+.comment-actions button:active { background-color: var(--border-color); }
+.comment-actions .delete-btn:hover { color: var(--danger-hover); }
+.comment-actions svg { width: 16px; height: 16px; }
 
-.comment-actions button.liked {
-    color: var(--accent-primary);
-}
-
-.comment-actions .delete-btn:hover {
-    color: var(--danger-emphasis);
-    background-color: rgba(248, 81, 73, 0.1);
-}
-
-.comment-actions svg {
-    width: 16px;
-    height: 16px;
-}
-
-/* Message Form */
+/* 4. FORMULÁRIO DE ENVIO */
 #message-form {
     display: flex;
-    align-items: flex-end;
-    gap: 8px;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 #message-input {
-    flex: 1;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
-    padding: 8px 12px;
+    flex-grow: 1;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 20px; /* Deixa o input mais arredondado e moderno */
+    padding: 0.75rem 1rem;
     color: var(--text-primary);
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 40px;
-    max-height: 200px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-#message-input::placeholder {
-    color: var(--text-tertiary);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 #message-input:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px var(--accent-muted);
+    box-shadow: 0 0 0 3px rgba(47, 129, 247, 0.3);
 }
 
 #message-form button {
+    flex-shrink: 0;
     border: none;
-    background-color: var(--success);
+    background-color: var(--accent-primary);
     color: white;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-    height: 40px;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
-#message-form button:hover:not(:disabled) {
-    background-color: var(--success-emphasis);
+#message-form button:hover { background-color: var(--accent-hover); }
+#message-form button:active { transform: scale(0.9); }
+#message-form button:disabled { background-color: var(--border-color); cursor: not-allowed; }
+
+/* 5. PÁGINAS DE AUTENTICAÇÃO */
+.auth-page {
+    justify-content: center;
+    padding: 1rem;
+    padding-bottom: calc(1rem + var(--safe-area-bottom));
 }
 
-#message-form button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Auth Container */
-#auth-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-#auth-container button#logout-btn {
-    background-color: transparent;
-    border: 1px solid var(--border-default);
-    color: var(--text-primary);
-    padding: 5px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-#auth-container button#logout-btn:hover {
-    background-color: var(--danger);
-    border-color: var(--danger);
-    color: white;
-}
-
-/* Loader */
-.loader {
-    text-align: center;
-    padding: 48px;
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-/* Auth Form */
 .auth-form-container {
     width: 100%;
-    max-width: 340px;
-    padding: 32px;
+    max-width: 400px;
+    padding: 2rem;
     background-color: var(--bg-secondary);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
-    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
 }
 
 .auth-form-container h1 {
     text-align: center;
-    margin: 0 0 24px 0;
-    font-weight: 300;
-    font-size: 24px;
-    letter-spacing: -0.5px;
-    color: var(--text-primary);
-}
-
-.form-group {
-    margin-bottom: 16px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
+    margin-top: 0;
+    margin-bottom: 2rem;
     font-weight: 600;
-    font-size: 14px;
-    color: var(--text-primary);
+    font-size: 1.5rem;
 }
 
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
 .form-group input {
     width: 100%;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-default);
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 8px 12px;
+    padding: 0.8rem 1rem;
     color: var(--text-primary);
-    font-size: 14px;
-    font-family: inherit;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1rem;
 }
-
-.form-group input::placeholder {
-    color: var(--text-tertiary);
-}
-
 .form-group input:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px var(--accent-muted);
+    box-shadow: 0 0 0 3px rgba(47, 129, 247, 0.3);
 }
 
 .auth-button {
     width: 100%;
-    padding: 8px 16px;
-    font-size: 14px;
+    padding: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: white;
-    background-color: var(--success);
-    border: 1px solid rgba(27, 31, 36, 0.15);
+    color: #fff;
+    background-color: var(--success-primary);
+    border: 1px solid rgba(240, 246, 252, 0.1);
     border-radius: 6px;
     cursor: pointer;
-    margin-top: 8px;
-    transition: background-color 0.2s ease;
+    margin-top: 1rem;
+    transition: background-color 0.2s;
 }
-
-.auth-button:hover {
-    background-color: var(--success-emphasis);
-}
-
-.auth-button:active {
-    transform: scale(0.98);
-}
+.auth-button:hover { background-color: var(--success-hover); }
 
 .auth-switch {
     text-align: center;
-    margin-top: 16px;
-    padding: 16px;
-    border: 1px solid var(--border-default);
+    margin-top: 2rem;
+    font-size: 0.9rem;
+}
+.auth-switch a { color: var(--accent-hover); text-decoration: none; font-weight: 600; }
+.auth-switch a:hover { text-decoration: underline; }
+
+.error-message { color: var(--danger-hover); font-size: 0.9rem; text-align: center; margin-top: 1rem; min-height: 1.2em; }
+.loader { text-align: center; padding: 2rem; color: var(--text-secondary); }
+
+#logout-btn {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    border: none;
+    padding: 0.5rem 1rem;
     border-radius: 6px;
-    font-size: 14px;
-    color: var(--text-secondary);
-    background-color: var(--bg-primary);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s, color 0.2s;
 }
-
-.auth-switch a {
-    color: var(--accent-primary);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.auth-switch a:hover {
-    text-decoration: underline;
-}
-
-.error-message {
-    color: var(--danger-emphasis);
-    font-size: 14px;
-    text-align: center;
-    margin-top: 12px;
-    padding: 8px;
-    background-color: rgba(248, 81, 73, 0.1);
-    border-radius: 6px;
-    border: 1px solid rgba(248, 81, 73, 0.2);
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 12px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border-default);
-    border-radius: 6px;
-    border: 3px solid var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    header, main, footer {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-    
-    .auth-form-container {
-        padding: 24px;
-        max-width: 100%;
-    }
-    
-    header h1 {
-        font-size: 12px;
-    }
-}
+#logout-btn:hover { background-color: var(--danger-primary); color: white; }
