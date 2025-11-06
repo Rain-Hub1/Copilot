@@ -1,18 +1,21 @@
-const PARSE_APPLICATION_ID = 'Tk5Zxhr0L5RZkXu8xTAn0uBYCOJcD9Z0JctLnmTz';
-const PARSE_JAVASCRIPT_KEY = 'SXU64wQdwWggMcOOAz4OCqQ8KnBrBeCGiREtGkNi';
-Parse.initialize(PARSE_APPLICATION_ID, PARSE_JAVASCRIPT_KEY);
-Parse.serverURL = 'https://parseapi.back4app.com/';
+const { Client, Databases, Storage, Query, ID } = Appwrite;
+
+const APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1';
+const APPWRITE_PROJECT_ID = 'as-bah-mkskejjsjb91-jkjjjjjvdihhjnnn';
+const DATABASE_ID = 'db-chat';
+const COLLECTION_ID = 'comentarios';
+const BUCKET_ID = '690c218f0005c98c9957';
+
+const client = new Client()
+    .setEndpoint(APPWRITE_ENDPOINT)
+    .setProject(APPWRITE_PROJECT_ID);
+
+const databases = new Databases(client);
+const storage = new Storage(client);
 
 const messagesList = document.querySelector('#messages-list');
 const loader = document.querySelector('#loader');
 const usernameInput = document.querySelector('#username-input');
-
-const fileToBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = error => reject(error);
-});
 
 const attachChatListeners = () => {
     let selectedFile = null;
@@ -48,22 +51,43 @@ const attachChatListeners = () => {
         if (!username || (!content && !selectedFile)) return;
         
         sendBtn.disabled = true;
-        let params = { username, content };
+        let fileId = null;
 
-        if (selectedFile) {
-            params.fileData = await fileToBase64(selectedFile);
-            params.fileName = selectedFile.name;
-        }
-        
         try {
-            const savedComment = await Parse.Cloud.run("postComment", params);
-            const tempParseObject = Parse.Object.fromJSON(savedComment);
-            displayComment(tempParseObject);
+            if (selectedFile) {
+                const uploadedFile = await storage.createFile(
+                    BUCKET_ID,
+                    ID.unique(),
+                    selectedFile
+                );
+                fileId = uploadedFile.$id;
+            }
+
+            const newComment = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                ID.unique(),
+                {
+                    username: username,
+                    content: content,
+                    likes: 0,
+                    fileId: fileId
+                },
+                [
+                    `read("any")`,
+                    `update("any")`,
+                    `delete("any")`
+                ]
+            );
+
+            displayComment(newComment);
 
             messageInput.value = '';
             removeImageBtn.click();
+            localStorage.setItem('chatUsername', username);
+
         } catch (error) {
-            console.error("Erro ao chamar Cloud Code:", error);
+            console.error("Erro ao enviar comentário:", error);
             alert("Não foi possível enviar o comentário.");
         } finally {
             sendBtn.disabled = false;
@@ -73,83 +97,97 @@ const attachChatListeners = () => {
 
 const fetchComments = async () => {
     loader.style.display = 'block';
-    const query = new Parse.Query("Comentarios");
-    query.ascending("createdAt");
     try {
-        const comments = await query.find();
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            COLLECTION_ID,
+            [Query.orderAsc('$createdAt')]
+        );
         loader.style.display = 'none';
         messagesList.innerHTML = '';
-        comments.forEach(displayComment);
+        response.documents.forEach(displayComment);
         messagesList.scrollTop = messagesList.scrollHeight;
     } catch (error) {
         console.error("Erro ao buscar:", error);
+        loader.style.display = 'none';
     }
 };
 
+const getFileUrl = (fileId) => {
+    return `${APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
+};
+
 const displayComment = (comment) => {
-    const username = comment.get("username") || "Anônimo";
-    const content = comment.get("content");
-    const likes = comment.get("likes") || 0;
-    const imageFile = comment.get("image");
+    const username = comment.username || "Anônimo";
+    const content = comment.content;
+    const likes = comment.likes || 0;
+    const fileId = comment.fileId;
 
     const commentElement = document.createElement('div');
-    commentElement.id = `comment-${comment.id}`;
+    commentElement.id = `comment-${comment.$id}`;
     commentElement.classList.add('comment');
     
-    const imageHTML = imageFile ? `<img src="${imageFile.url()}" class="comment-image" alt="Imagem do comentário">` : '';
+    const imageHTML = fileId ? `<img src="${getFileUrl(fileId)}" class="comment-image" alt="Imagem do comentário">` : '';
     const contentHTML = content ? `<p>${content}</p>` : '';
 
     commentElement.innerHTML = `
         <div class="comment-header">
             <strong>${username}</strong>
-            <span>${new Date(comment.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span>${new Date(comment.$createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
         ${imageHTML}
         ${contentHTML}
         <div class="comment-actions">
-            <button class="like-btn" data-id="${comment.id}">👍 <span>Curtir (${likes})</span></button>
-            <button class="delete-btn" data-id="${comment.id}">🗑️ <span>Deletar</span></button>
+            <button class="like-btn" data-id="${comment.$id}">👍 <span>Curtir (${likes})</span></button>
+            <button class="delete-btn" data-id="${comment.$id}">🗑️ <span>Deletar</span></button>
         </div>
     `;
     messagesList.appendChild(commentElement);
 
     commentElement.querySelector('.delete-btn').addEventListener('click', (e) => deleteComment(e.target.closest('button').dataset.id));
-    commentElement.querySelector('.like-btn').addEventListener('click', (e) => likeComment(e.target.closest('button').dataset.id));
+    commentElement.querySelector('.like-btn').addEventListener('click', (e) => likeComment(e.target.closest('button').dataset.id, likes));
 };
 
 const deleteComment = async (id) => {
-    const query = new Parse.Query("Comentarios");
     try {
-        const comentario = await query.get(id);
-        await comentario.destroy();
+        await databases.deleteDocument(DATABASE_ID, COLLECTION_ID, id);
     } catch (error) {
         console.error("Erro ao deletar:", error);
     }
 };
 
-const likeComment = async (id) => {
-    const query = new Parse.Query("Comentarios");
+const likeComment = async (id, currentLikes) => {
     try {
-        const comentario = await query.get(id);
-        comentario.increment("likes");
-        await comentario.save();
+        await databases.updateDocument(
+            DATABASE_ID,
+            COLLECTION_ID,
+            id,
+            { likes: currentLikes + 1 }
+        );
     } catch (error) {
         console.error("Erro ao curtir:", error);
     }
 };
 
-const listenToChanges = async () => {
-    const query = new Parse.Query('Comentarios');
-    const subscription = await query.subscribe();
-
-    subscription.on('update', (comment) => {
-        const likeButtonSpan = document.querySelector(`#comment-${comment.id} .like-btn span`);
-        if (likeButtonSpan) {
-            likeButtonSpan.textContent = `Curtir (${comment.get("likes") || 0})`;
+const listenToChanges = () => {
+    client.subscribe(`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`, (response) => {
+        const payload = response.payload;
+        
+        if (response.events.includes(`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents.*.create`)) {
+            // O Appwrite Realtime envia o objeto completo, mas evitamos duplicidade
+            // Já adicionamos o comentário na tela no momento do envio
         }
-    });
-    subscription.on('delete', (comment) => {
-        document.querySelector(`#comment-${comment.id}`)?.remove();
+
+        if (response.events.includes(`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents.*.update`)) {
+            const likeButtonSpan = document.querySelector(`#comment-${payload.$id} .like-btn span`);
+            if (likeButtonSpan) {
+                likeButtonSpan.textContent = `Curtir (${payload.likes || 0})`;
+            }
+        }
+
+        if (response.events.includes(`databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents.*.delete`)) {
+            document.querySelector(`#comment-${payload.$id}`)?.remove();
+        }
     });
 };
 
@@ -165,17 +203,9 @@ const attachSettingsListeners = () => {
         settingsModal.style.display = 'flex';
     });
 
-    const closeModal = () => {
-        settingsModal.style.display = 'none';
-    };
-
+    const closeModal = () => { settingsModal.style.display = 'none'; };
     closeModalBtn.addEventListener('click', closeModal);
-    settingsModal.addEventListener('click', (e) => {
-        if (e.target === settingsModal) {
-            closeModal();
-        }
-    });
-
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeModal(); });
     saveSettingsBtn.addEventListener('click', () => {
         const newUsername = usernameSettingInput.value.trim();
         if (newUsername) {
@@ -191,7 +221,7 @@ const init = async () => {
     attachChatListeners();
     attachSettingsListeners();
     await fetchComments();
-    await listenToChanges();
+    listenToChanges();
 };
 
 init();
