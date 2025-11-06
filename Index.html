@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dev Comments</title>
+    <title>Dev Comments (Back4App)</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://npmcdn.com/parse/dist/parse.min.js"></script>
 </head>
 <body>
-    <!-- O contêiner principal onde as "páginas" serão renderizadas -->
     <div id="root"></div>
 
-    <!-- Template para a página do Chat -->
     <template id="template-chat">
         <div id="app">
             <header>
@@ -37,7 +35,6 @@
         </div>
     </template>
 
-    <!-- Template para a página de Login -->
     <template id="template-login">
         <div class="auth-page">
             <div class="auth-form-container">
@@ -61,7 +58,6 @@
         </div>
     </template>
 
-    <!-- Template para a página de Cadastro -->
     <template id="template-signup">
         <div class="auth-page">
             <div class="auth-form-container">
