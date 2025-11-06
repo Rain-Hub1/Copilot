@@ -3,62 +3,20 @@ const PARSE_JAVASCRIPT_KEY = 'SXU64wQdwWggMcOOAz4OCqQ8KnBrBeCGiREtGkNi';
 Parse.initialize(PARSE_APPLICATION_ID, PARSE_JAVASCRIPT_KEY);
 Parse.serverURL = 'https://parseapi.back4app.com/';
 
-const root = document.querySelector('#root');
-const templates = {
-    chat: document.querySelector('#template-chat'),
-    settings: document.querySelector('#template-settings')
-};
+// Elementos Globais
+const messagesList = document.querySelector('#messages-list');
+const loader = document.querySelector('#loader');
+const usernameInput = document.querySelector('#username-input');
 
-const router = () => {
-    const path = window.location.hash || '#/';
-    root.innerHTML = '';
-    if (path === '#/settings') {
-        renderSettingsPage();
-    } else {
-        renderChatPage();
-    }
-};
-
-const renderTemplate = (templateId) => {
-    const template = document.querySelector(templateId);
-    const content = template.content.cloneNode(true);
-    root.appendChild(content);
-};
-
-const renderChatPage = () => {
-    renderTemplate('#template-chat');
-    document.querySelector('#settings-btn').addEventListener('click', () => window.location.hash = '/settings');
-    
-    const usernameInput = document.querySelector('#username-input');
-    usernameInput.value = localStorage.getItem('chatUsername') || '';
-
-    // Re-anexar todos os outros eventos do chat
-    attachChatListeners();
-    fetchComments();
-    listenToChanges();
-};
-
-const renderSettingsPage = () => {
-    renderTemplate('#template-settings');
-    document.querySelector('#back-btn').addEventListener('click', () => window.location.hash = '/');
-    
-    const usernameSettingInput = document.querySelector('#username-setting');
-    usernameSettingInput.value = localStorage.getItem('chatUsername') || '';
-
-    document.querySelector('#save-settings-btn').addEventListener('click', () => {
-        const newUsername = usernameSettingInput.value.trim();
-        if (newUsername) {
-            localStorage.setItem('chatUsername', newUsername);
-            window.location.hash = '/';
-        }
-    });
-};
-
+// Lógica do Chat
 const attachChatListeners = () => {
     let selectedFile = null;
+    const messageForm = document.querySelector('#message-form');
+    const messageInput = document.querySelector('#message-input');
     const fileInput = document.querySelector('#file-input');
     const imagePreviewContainer = document.querySelector('#image-preview');
     const previewImage = document.querySelector('#preview-image');
+    const removeImageBtn = document.querySelector('#remove-image-btn');
 
     document.querySelector('#image-upload-btn').addEventListener('click', () => fileInput.click());
     
@@ -74,16 +32,16 @@ const attachChatListeners = () => {
         }
     });
 
-    document.querySelector('#remove-image-btn').addEventListener('click', () => {
+    removeImageBtn.addEventListener('click', () => {
         selectedFile = null;
         fileInput.value = '';
         imagePreviewContainer.style.display = 'none';
     });
 
-    document.querySelector('#message-form').addEventListener('submit', async (e) => {
+    messageForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = document.querySelector('#username-input').value.trim();
-        const content = document.querySelector('#message-input').value.trim();
+        const username = usernameInput.value.trim();
+        const content = messageInput.value.trim();
 
         if (!username || (!content && !selectedFile)) return;
 
@@ -101,29 +59,26 @@ const attachChatListeners = () => {
         
         try {
             await comentario.save();
-            document.querySelector('#message-input').value = '';
-            document.querySelector('#remove-image-btn').click();
+            messageInput.value = '';
+            removeImageBtn.click();
         } catch (error) { console.error("Erro ao salvar:", error); }
     });
 };
 
 const fetchComments = async () => {
-    document.querySelector('#loader').style.display = 'block';
+    loader.style.display = 'block';
     const query = new Parse.Query("Comentarios");
     query.ascending("createdAt");
     try {
         const comments = await query.find();
-        document.querySelector('#loader').style.display = 'none';
-        const messagesList = document.querySelector('#messages-list');
+        loader.style.display = 'none';
         messagesList.innerHTML = '';
         comments.forEach(displayComment);
+        messagesList.scrollTop = messagesList.scrollHeight;
     } catch (error) { console.error("Erro ao buscar:", error); }
 };
 
 const displayComment = (comment) => {
-    const messagesList = document.querySelector('#messages-list');
-    if (!messagesList) return;
-
     const username = comment.get("username") || "Anônimo";
     const content = comment.get("content");
     const likes = comment.get("likes") || 0;
@@ -149,7 +104,6 @@ const displayComment = (comment) => {
         </div>
     `;
     messagesList.appendChild(commentElement);
-    messagesList.scrollTop = messagesList.scrollHeight;
 
     commentElement.querySelector('.delete-btn').addEventListener('click', (e) => deleteComment(e.target.closest('button').dataset.id));
     commentElement.querySelector('.like-btn').addEventListener('click', (e) => likeComment(e.target.closest('button').dataset.id));
@@ -175,7 +129,14 @@ const likeComment = async (id) => {
 const listenToChanges = async () => {
     const query = new Parse.Query('Comentarios');
     const subscription = await query.subscribe();
-    subscription.on('create', (comment) => { displayComment(comment); });
+
+    subscription.on('create', (comment) => {
+        const isScrolledToBottom = messagesList.scrollHeight - messagesList.clientHeight <= messagesList.scrollTop + 1;
+        displayComment(comment);
+        if (isScrolledToBottom) {
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+    });
     subscription.on('update', (comment) => {
         const likeButtonSpan = document.querySelector(`#comment-${comment.id} .like-btn span`);
         if (likeButtonSpan) {
@@ -187,5 +148,47 @@ const listenToChanges = async () => {
     });
 };
 
-window.addEventListener('hashchange', router);
-router(); // Inicia o roteador na primeira carga
+// Lógica do Modal de Configurações
+const attachSettingsListeners = () => {
+    const settingsBtn = document.querySelector('#settings-btn');
+    const settingsModal = document.querySelector('#settings-modal');
+    const closeModalBtn = document.querySelector('#close-modal-btn');
+    const saveSettingsBtn = document.querySelector('#save-settings-btn');
+    const usernameSettingInput = document.querySelector('#username-setting');
+
+    settingsBtn.addEventListener('click', () => {
+        usernameSettingInput.value = localStorage.getItem('chatUsername') || '';
+        settingsModal.style.display = 'flex';
+    });
+
+    const closeModal = () => {
+        settingsModal.style.display = 'none';
+    };
+
+    closeModalBtn.addEventListener('click', closeModal);
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            closeModal();
+        }
+    });
+
+    saveSettingsBtn.addEventListener('click', () => {
+        const newUsername = usernameSettingInput.value.trim();
+        if (newUsername) {
+            localStorage.setItem('chatUsername', newUsername);
+            usernameInput.value = newUsername;
+        }
+        closeModal();
+    });
+};
+
+// Função Principal de Inicialização
+const init = async () => {
+    usernameInput.value = localStorage.getItem('chatUsername') || '';
+    attachChatListeners();
+    attachSettingsListeners();
+    await fetchComments();
+    await listenToChanges();
+};
+
+init();
