@@ -246,6 +246,12 @@ footer {
 .error-message { color: var(--danger-hover); font-size: 0.9rem; text-align: center; margin-top: 1rem; min-height: 1.2em; }
 .loader { text-align: center; padding: 2rem; color: var(--text-secondary); }
 
+/* Adicionar ao final do seu style.css */
+#username-input {
+    flex-grow: 0;
+    width: 100px; /* Largura para o campo de nome */
+}
+
 #logout-btn {
     background-color: var(--border-color);
     color: var(--text-primary);
